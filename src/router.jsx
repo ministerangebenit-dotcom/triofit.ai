@@ -4,25 +4,30 @@ import MainLayout from "./layouts/MainLayout";
 
 import Landing from "./pages/Landing";
 
+import Conversation from "./pages/Conversation";
+
 export default function Router() {
 
-return (
+    return (
 
-<Routes>
+        <Routes>
 
-<Route
-element={<MainLayout />}
->
+            <Route element={<MainLayout />}>
 
-<Route
-path="/"
-element={<Landing />}
-/>
+                <Route
+                    path="/"
+                    element={<Landing />}
+                />
 
-</Route>
+                <Route
+                    path="/conversation"
+                    element={<Conversation />}
+                />
 
-</Routes>
+            </Route>
 
-);
+        </Routes>
+
+    );
 
 }
