@@ -49,10 +49,13 @@ router.post("/templates/suggest", async (req, res) => {
 Available outfit templates:
 ${templateList}
 
-Reply with ONLY the number of the best matching template, nothing else.`;
+Reply in exactly this format:
+INDEX: [number]
+CONFIDENCE: [0-100, how well this matches]`;
 
     const raw = await chatCompletion([{ role: "user", text: prompt }]);
-    const idx = parseInt(raw.match(/\d+/)?.[0] ?? "0", 10);
+    const idx = parseInt(raw.match(/INDEX:\s*(\d+)/)?.[1] ?? "0", 10);
+    const confidence = parseInt(raw.match(/CONFIDENCE:\s*(\d+)/)?.[1] ?? "70", 10);
     const chosen = templates[idx] || templates[0];
 
     await supabase.from("admin_flags").upsert(
@@ -61,30 +64,21 @@ Reply with ONLY the number of the best matching template, nothing else.`;
         needs_image: true,
         suggested_template_id: chosen.id,
         suggestion_reason: `Matched to "${profile.style}" style for ${profile.occasion}`,
+        ai_confidence: confidence,
         resolved: false,
         flagged_at: new Date().toISOString(),
       },
       { onConflict: "session_id" }
     );
 
-    res.json({ suggestion: chosen });
+    res.json({ suggestion: chosen, confidence, allTemplates: templates });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Suggestion failed" });
   }
 });
 
-router.post("/templates/send", async (req, res) => {
-  const { session_id, template_id } = req.body;
-
-  const { data: template, error: tErr } = await supabase
-    .from("outfit_templates")
-    .select("*")
-    .eq("id", template_id)
-    .single();
-
-  if (tErr) return res.status(404).json({ error: "Template not found" });
-
+async function deliverTemplate(session_id, template, wasOverride, aiSuggestedId, aiConfidence, profile) {
   const { data: msg, error: mErr } = await supabase
     .from("messages")
     .insert({
@@ -97,26 +91,112 @@ router.post("/templates/send", async (req, res) => {
     .select()
     .single();
 
-  if (mErr) return res.status(500).json({ error: mErr.message });
+  if (mErr) throw new Error(mErr.message);
+
+  await supabase.from("template_corrections").insert({
+    session_id,
+    profile_snapshot: profile || null,
+    ai_suggested_id: aiSuggestedId || template.id,
+    ai_confidence: aiConfidence || null,
+    human_chosen_id: template.id,
+    was_override: wasOverride,
+  });
+
+  await supabase.from("admin_flags").update({ resolved: true }).eq("session_id", session_id);
 
   const traits = scoreFromTemplate(template);
   const score = finalScore(traits);
 
-  await supabase.from("admin_flags").update({ resolved: true }).eq("session_id", session_id);
+  return { message: msg, blueprint: traits, finalScore: score };
+}
 
-  res.json({ message: msg, blueprint: traits, finalScore: score });
+router.post("/templates/send", async (req, res) => {
+  try {
+    const { session_id } = req.body;
+
+    const { data: flag, error: fErr } = await supabase
+      .from("admin_flags")
+      .select("*")
+      .eq("session_id", session_id)
+      .single();
+
+    if (fErr || !flag?.suggested_template_id) return res.status(404).json({ error: "No suggestion on file" });
+
+    const { data: template, error: tErr } = await supabase
+      .from("outfit_templates")
+      .select("*")
+      .eq("id", flag.suggested_template_id)
+      .single();
+
+    if (tErr) return res.status(404).json({ error: "Template not found" });
+
+    const result = await deliverTemplate(session_id, template, false, template.id, flag.ai_confidence, null);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/templates/override", async (req, res) => {
+  try {
+    const { session_id, template_id } = req.body;
+
+    const { data: flag } = await supabase
+      .from("admin_flags")
+      .select("*")
+      .eq("session_id", session_id)
+      .single();
+
+    const { data: template, error: tErr } = await supabase
+      .from("outfit_templates")
+      .select("*")
+      .eq("id", template_id)
+      .single();
+
+    if (tErr) return res.status(404).json({ error: "Template not found" });
+
+    const result = await deliverTemplate(
+      session_id,
+      template,
+      true,
+      flag?.suggested_template_id,
+      flag?.ai_confidence,
+      null
+    );
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get("/admin/pending", async (req, res) => {
   const { data, error } = await supabase
     .from("admin_flags")
-    .select("*, sessions(name, style, occasion, goal), outfit_templates(description, image_url)")
+    .select("*, sessions(name, style, occasion, goal, gender), outfit_templates(description, image_url)")
     .eq("resolved", false)
     .eq("needs_image", true)
     .order("flagged_at", { ascending: true });
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+router.get("/admin/corrections", async (req, res) => {
+  const { data, error } = await supabase
+    .from("template_corrections")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const total = data.length;
+  const overrides = data.filter((c) => c.was_override).length;
+  const accuracy = total > 0 ? Math.round(((total - overrides) / total) * 100) : null;
+
+  res.json({ corrections: data, stats: { total, overrides, accuracy } });
 });
 
 export default router;
