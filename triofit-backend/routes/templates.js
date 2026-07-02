@@ -107,6 +107,15 @@ async function deliverTemplate(session_id, template, wasOverride, aiSuggestedId,
   const traits = scoreFromTemplate(template);
   const score = finalScore(traits);
 
+  const channel = supabase.channel("score-" + session_id);
+  await channel.subscribe();
+  await channel.send({
+    type: "broadcast",
+    event: "outfit_score",
+    payload: { blueprint: traits, finalScore: score, outfitText: template.description, imageUrl: template.image_url },
+  });
+  await supabase.removeChannel(channel);
+
   return { message: msg, blueprint: traits, finalScore: score };
 }
 
