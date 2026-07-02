@@ -4,7 +4,7 @@ import BackgroundGlow from "../components/landing/BackgroundGlow";
 
 import Hero from "../components/landing/Hero";
 
-import StartButton from "../components/landing/StartButton.jsx";
+import StartButton from "../components/landing/StartButton";
 
 import { motion } from "framer-motion";
 
