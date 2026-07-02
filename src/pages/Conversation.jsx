@@ -24,7 +24,10 @@ const THINKING_MESSAGES = [
   "Understanding your personality…",
   "Evaluating confidence signals…",
   "Comparing outfit goals…",
+  "Reading between the lines of what you said…",
   "Estimating first impressions…",
+  "Weighing tone against context…",
+  "Looking for inconsistencies…",
   "Predicting social perception…",
 ];
 
@@ -94,17 +97,6 @@ function RadarBars({ values, dims }) {
     </div>
   );
 }
-
-const THINKING_MESSAGES = [
-  "Understanding your personality…",
-  "Evaluating confidence signals…",
-  "Comparing outfit goals…",
-  "Reading between the lines of what you said…",
-  "Estimating first impressions…",
-  "Weighing tone against context…",
-  "Looking for inconsistencies…",
-  "Predicting social perception…",
-];
 
 function ThinkingSequence({ onComplete }) {
   const [progress, setProgress] = useState(0);
@@ -189,6 +181,7 @@ function ThinkingSequence({ onComplete }) {
     </div>
   );
 }
+
 function AnalysisReveal({ analysis, onChoice }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
