@@ -1,61 +1,43 @@
 @import "tailwindcss";
 
-:root{
-
---background:#080808;
-
---surface:#121212;
-
---gold:#C79B45;
-
---gold-light:#D9AE5A;
-
---text:#F5F5F5;
-
---muted:#8E8E8E;
-
+:root {
+  --bg: #1a1a1c;
+  --bg-elevated: #201f22;
+  --surface: #232226;
+  --surface-2: #2b2a2e;
+  --gold: #C79B45;
+  --gold-light: #D9AE5A;
+  --text: #F5F5F5;
+  --text-dim: #9a9a9e;
+  --muted: #6f6f74;
+  --border-soft: rgba(255,255,255,0.07);
 }
 
-body{
-
-margin:0;
-
-background:var(--background);
-
-color:var(--text);
-
-font-family:"Inter",sans-serif;
-
-overflow-x:hidden;
-
+[data-theme="light"] {
+  --bg: #f4f3f1;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #ececea;
+  --gold: #b8893a;
+  --gold-light: #C79B45;
+  --text: #17161a;
+  --text-dim: #5a5a5f;
+  --muted: #9a9a9e;
+  --border-soft: rgba(0,0,0,0.08);
 }
 
-*{
-
-box-sizing:border-box;
-
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.font-display{
-
-font-family:"Playfair Display",serif;
-
+.font-display {
+  font-family: "Playfair Display", serif;
 }
 
-.bg-background{
-
-background:var(--background);
-
-}
-
-.text-gold{
-
-color:var(--gold);
-
-}
-
-button{
-
-font-family:inherit;
-
+.bg-background {
+  background: var(--bg);
 }
