@@ -194,7 +194,7 @@ function WaitingForStylist() {
   );
 }
 
-function Blueprint({ blueprint, outfitText }) {
+function Blueprint({ blueprint }) {
   const [values, setValues] = useState({});
   useEffect(() => {
     let cancelled = false;
@@ -295,7 +295,7 @@ export default function Conversation() {
   useEffect(() => { const t = setTimeout(() => askNext(0), 800); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
-    const channel = sb
+    const chatChannel = sb
       .channel("chat-" + sessionId)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const m = payload.new;
@@ -303,17 +303,25 @@ export default function Conversation() {
 
         if (m.message_type === "image") {
           setMessages((msgs) => [...msgs, { role: "assistant", text: m.message, image: m.image_url }]);
-          if (blueprintData) {
-            setStage("blueprint");
-          }
         } else {
           setMessages((msgs) => [...msgs, { role: "assistant", text: m.message }]);
         }
       })
       .subscribe();
 
-    return () => { sb.removeChannel(channel); };
-  }, [blueprintData]);
+    const scoreChannel = sb
+      .channel("score-" + sessionId)
+      .on("broadcast", { event: "outfit_score" }, (payload) => {
+        setBlueprintData(payload.payload);
+        setStage("blueprint");
+      })
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(chatChannel);
+      sb.removeChannel(scoreChannel);
+    };
+  }, [sessionId]);
 
   function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
@@ -372,19 +380,6 @@ export default function Conversation() {
       pushAssistant("Having trouble reaching the outfit catalog right now.");
     }
   }
-
-  useEffect(() => {
-    const channel = sb
-      .channel("blueprint-" + sessionId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const m = payload.new;
-        if (m.session_id === sessionId && m.sender === "admin" && m.message_type === "image") {
-          axios.get(`${BACKEND}/session/${sessionId}`).catch(() => {});
-        }
-      })
-      .subscribe();
-    return () => { sb.removeChannel(channel); };
-  }, [sessionId]);
 
   function sendFreeText() {
     if (!input.trim()) return;
@@ -446,7 +441,7 @@ export default function Conversation() {
         {stage === "thinking" && <ThinkingSequence onComplete={onThinkingComplete} />}
         {stage === "analysis" && analysis && <AnalysisReveal analysis={analysis} onChoice={onAnalysisChoice} />}
         {stage === "waiting" && <WaitingForStylist />}
-        {stage === "blueprint" && analysis?.blueprint && <Blueprint blueprint={analysis.blueprint} />}
+        {stage === "blueprint" && blueprintData && <Blueprint blueprint={blueprintData.blueprint} />}
         {stage === "decline" && <DeclinePath />}
 
         <div ref={endRef} />
