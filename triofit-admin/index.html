@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TRIOFIT Admin</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #16151a; color: #eee; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; color: #C79B45; margin-bottom: 20px; }
+  .queue-item { background: #1f1e23; border: 1px solid #2a292e; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .queue-item .meta { font-size: 12px; color: #999; margin-bottom: 8px; }
+  .queue-item .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .queue-item .suggestion { display: flex; gap: 12px; align-items: center; margin-top: 12px; background: #17161a; padding: 10px; border-radius: 8px; }
+  .queue-item .suggestion img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+  .queue-item .suggestion-desc { font-size: 13px; flex: 1; }
+  button { background: #C79B45; border: none; color: #080808; font-weight: 700; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  button.secondary { background: transparent; border: 1px solid #444; color: #ccc; }
+  .template-form { background: #1f1e23; border-radius: 12px; padding: 16px; margin-top: 30px; }
+  .template-form input, .template-form select { width: 100%; padding: 8px; margin-bottom: 8px; background: #17161a; border: 1px solid #333; border-radius: 6px; color: #eee; font-size: 13px; box-sizing: border-box; }
+  .row { display: flex; gap: 8px; }
+  .empty { color: #666; font-size: 13px; padding: 20px 0; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tabs button { background: transparent; border: 1px solid #333; color: #999; }
+  .tabs button.active { background: #C79B45; color: #080808; border: none; }
+</style>
+</head>
+<body>
+
+<h1>TRIOFIT — Admin</h1>
+
+<div class="tabs">
+  <button id="tabQueue" class="active" onclick="showTab('queue')">Image queue</button>
+  <button id="tabTemplates" onclick="showTab('templates')">Add template</button>
+</div>
+
+<div id="queueView">
+  <div id="queueList" class="empty">Loading…</div>
+</div>
+
+<div id="templatesView" style="display:none;">
+  <div class="template-form">
+    <input id="t-desc" placeholder="Description (e.g. Navy overshirt, white tee, straight trousers)">
+    <div class="row">
+      <select id="t-occasion">
+        <option value="A professional interview">Interview</option>
+        <option value="An evening out">Evening out</option>
+        <option value="A wedding">Wedding</option>
+        <option value="Everyday office wear">Office wear</option>
+        <option value="A casual event">Casual event</option>
+      </select>
+      <select id="t-gender">
+        <option value="">Any</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+      </select>
+    </div>
+    <input id="t-style" placeholder="Style tag (e.g. Classic & elegant)">
+    <input id="t-image" placeholder="Image URL">
+    <div class="row">
+      <input id="t-conf" type="number" placeholder="Confidence" value="80">
+      <input id="t-auth" type="number" placeholder="Authority" value="80">
+    </div>
+    <div class="row">
+      <input id="t-trust" type="number" placeholder="Trust" value="80">
+      <input id="t-appr" type="number" placeholder="Approachability" value="75">
+    </div>
+    <input id="t-fit" type="number" placeholder="Style fit" value="80">
+    <button onclick="addTemplate()">Save template</button>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:3001/api";
+
+function showTab(tab) {
+  document.getElementById('queueView').style.display = tab === 'queue' ? 'block' : 'none';
+  document.getElementById('templatesView').style.display = tab === 'templates' ? 'block' : 'none';
+  document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
+  document.getElementById('tabTemplates').classList.toggle('active', tab === 'templates');
+  if (tab === 'queue') loadQueue();
+}
+
+async function loadQueue() {
+  const res = await fetch(`${API}/admin/pending`);
+  const data = await res.json();
+  const list = document.getElementById('queueList');
+
+  if (!data.length) {
+    list.className = 'empty';
+    list.innerHTML = 'No one waiting for an image right now.';
+    return;
+  }
+
+  list.className = '';
+  list.innerHTML = data.map(item => `
+    <div class="queue-item">
+      <div class="meta">${item.sessions?.occasion || ''} · goal: ${item.sessions?.goal || ''}</div>
+      <div class="name">${item.sessions?.name || 'Unknown'}</div>
+      <div class="meta">Reason: ${item.suggestion_reason || ''}</div>
+      ${item.outfit_templates ? `
+        <div class="suggestion">
+          <img src="${item.outfit_templates.image_url}" onerror="this.style.display='none'">
+          <div class="suggestion-desc">${item.outfit_templates.description}</div>
+          <button onclick="sendTemplate('${item.session_id}', '${item.suggested_template_id}')">Send this</button>
+        </div>
+      ` : '<div class="empty">No suggestion matched — add a template.</div>'}
+    </div>
+  `).join('');
+}
+
+async function sendTemplate(sessionId, templateId) {
+  await fetch(`${API}/templates/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, template_id: templateId })
+  });
+  loadQueue();
+}
+
+async function addTemplate() {
+  const body = {
+    description: document.getElementById('t-desc').value,
+    occasion: document.getElementById('t-occasion').value,
+    gender: document.getElementById('t-gender').value || null,
+    style_tag: document.getElementById('t-style').value,
+    image_url: document.getElementById('t-image').value,
+    base_confidence: parseInt(document.getElementById('t-conf').value),
+    base_authority: parseInt(document.getElementById('t-auth').value),
+    base_trust: parseInt(document.getElementById('t-trust').value),
+    base_approachability: parseInt(document.getElementById('t-appr').value),
+    base_style_fit: parseInt(document.getElementById('t-fit').value),
+  };
+  await fetch(`${API}/templates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  alert('Template saved.');
+  document.getElementById('t-desc').value = '';
+  document.getElementById('t-image').value = '';
+}
+
+loadQueue();
+setInterval(loadQueue, 5000);
+</script>
+</body>
+</html>
