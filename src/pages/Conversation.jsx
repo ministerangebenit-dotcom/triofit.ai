@@ -6,7 +6,7 @@ import ChatBackground from "../components/chat/ChatBackground";
 import ThemeToggle from "../components/shared/ThemeToggle";
 
 const PROFILE_QUESTIONS = [
-  { key: "gender", q: (n) => "First — how do you identify?", options: ["Male", "Female", "Prefer not to say"] },
+  { key: "gender", q: () => "First — how do you identify?", options: ["Male", "Female", "Prefer not to say"] },
   { key: "age", q: () => "What's your age range?", options: ["18–24", "25–34", "35–44", "45+"] },
   { key: "style", q: () => "Which style feels most like you?", options: ["Classic & elegant", "Streetwear & urban", "Afro-chic", "Casual & relaxed", "Depends on the day"] },
   { key: "occasion", q: () => "What are you dressing for right now?", options: ["A professional interview", "An evening out", "A wedding", "Everyday office wear", "A casual event"] },
@@ -111,6 +111,63 @@ function PerceptionReveal({ traits, finalScore, onComplete }) {
   );
 }
 
+function MessageActions({ text, onRegenerate }) {
+  const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState(null);
+  const [playing, setPlaying] = useState(false);
+
+  function copyText() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  function playVoice() {
+    if (!("speechSynthesis" in window)) return;
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.onend = () => setPlaying(false);
+    setPlaying(true);
+    window.speechSynthesis.speak(utter);
+  }
+
+  const iconBtn = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-dim)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+    fontSize: 14,
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 10, marginTop: 6, marginLeft: 2 }}>
+      <button onClick={copyText} style={iconBtn} aria-label="Copy" title="Copy">
+        <i className={copied ? "ti ti-check" : "ti ti-copy"} style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }} />
+      </button>
+      <button onClick={playVoice} style={iconBtn} aria-label="Play" title="Play">
+        <i className={playing ? "ti ti-player-pause" : "ti ti-player-play"} style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }} />
+      </button>
+      <button onClick={() => setLiked(liked === "up" ? null : "up")} style={iconBtn} aria-label="Like" title="Like">
+        <i className="ti ti-thumb-up" style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }} />
+      </button>
+      <button onClick={() => setLiked(liked === "down" ? null : "down")} style={iconBtn} aria-label="Dislike" title="Dislike">
+        <i className="ti ti-thumb-down" style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }} />
+      </button>
+      <button onClick={onRegenerate} style={iconBtn} aria-label="Regenerate" title="Regenerate">
+        <i className="ti ti-refresh" />
+      </button>
+    </div>
+  );
+}
+
 export default function Conversation() {
   const userName = localStorage.getItem("tf_name") || "there";
   const [messages, setMessages] = useState([
@@ -134,7 +191,7 @@ export default function Conversation() {
   function askNext(i) {
     if (i >= PROFILE_QUESTIONS.length) return;
     setThinking(true);
-    setTimeout(() => { setThinking(false); pushAssistant(PROFILE_QUESTIONS[i].q(userName)); }, 700);
+    setTimeout(() => { setThinking(false); pushAssistant(PROFILE_QUESTIONS[i].q()); }, 700);
   }
 
   async function handleOption(opt) {
@@ -161,9 +218,7 @@ export default function Conversation() {
     }
   }
 
-  async function onRevealComplete() {
-    setShowReveal(false);
-    setProfileDone(true);
+  async function fetchRecommendation() {
     setThinking(true);
     try {
       const res = await axios.post(`${BACKEND}/chat`, {
@@ -176,6 +231,12 @@ export default function Conversation() {
       setThinking(false);
       pushAssistant("I'm having trouble reaching your stylist brain — check the backend is running.");
     }
+  }
+
+  async function onRevealComplete() {
+    setShowReveal(false);
+    setProfileDone(true);
+    await fetchRecommendation();
   }
 
   async function sendFreeText() {
@@ -197,8 +258,27 @@ export default function Conversation() {
     }
   }
 
+  async function regenerateLast(index) {
+    const priorMessages = messages.slice(0, index);
+    setThinking(true);
+    try {
+      const res = await axios.post(`${BACKEND}/chat`, {
+        profile,
+        messages: priorMessages.map((m) => ({ role: m.role, text: m.text })),
+      });
+      setThinking(false);
+      setMessages((m) => {
+        const copy = [...m];
+        copy[index] = { role: "assistant", text: res.data.reply };
+        return copy;
+      });
+    } catch {
+      setThinking(false);
+    }
+  }
+
   const currentQ = PROFILE_QUESTIONS[step];
-  const showOptions = currentQ && !thinking && !showReveal && messages[messages.length - 1]?.text === currentQ.q(userName);
+  const showOptions = currentQ && !thinking && !showReveal && messages[messages.length - 1]?.text === currentQ.q();
 
   return (
     <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
@@ -211,7 +291,7 @@ export default function Conversation() {
               key={i}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
             >
               <div
                 style={{
@@ -223,6 +303,9 @@ export default function Conversation() {
               >
                 {m.text}
               </div>
+              {m.role === "assistant" && i > 0 && (
+                <MessageActions text={m.text} onRegenerate={() => regenerateLast(i)} />
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -262,23 +345,55 @@ export default function Conversation() {
       )}
 
       {profileDone && (
-        <div className="px-6 pb-6 flex gap-2 relative" style={{ zIndex: 1 }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
-            placeholder="Ask your stylist…"
+        <div className="px-4 pb-6 relative" style={{ zIndex: 1 }}>
+          <div
             style={{
-              flex: 1, background: "var(--surface)", border: "1px solid var(--border-soft)",
-              borderRadius: 50, padding: "12px 18px", fontSize: 14, color: "var(--text)", outline: "none",
+              display: "flex", alignItems: "center", gap: 6,
+              background: "var(--surface)", border: "1px solid var(--border-soft)",
+              borderRadius: 28, padding: "6px 8px 6px 16px",
             }}
-          />
-          <button
-            onClick={sendFreeText}
-            style={{ padding: "12px 20px", borderRadius: 50, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
           >
-            Send
-          </button>
+            <button
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }}
+              aria-label="Attach"
+              title="Attach"
+            >
+              <i className="ti ti-plus" style={{ fontSize: 18 }} />
+            </button>
+
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
+              placeholder="Ask your stylist"
+              style={{
+                flex: 1, background: "transparent", border: "none",
+                fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0",
+              }}
+            />
+
+            <button
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }}
+              aria-label="Voice"
+              title="Voice"
+            >
+              <i className="ti ti-microphone" style={{ fontSize: 18 }} />
+            </button>
+
+            <button
+              onClick={sendFreeText}
+              disabled={!input.trim()}
+              style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: input.trim() ? "var(--gold)" : "var(--surface-2)",
+                border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: input.trim() ? "pointer" : "default", flexShrink: 0,
+              }}
+              aria-label="Send"
+            >
+              <i className="ti ti-arrow-up" style={{ fontSize: 16, color: input.trim() ? "#080808" : "var(--text-dim)" }} />
+            </button>
+          </div>
         </div>
       )}
     </div>
