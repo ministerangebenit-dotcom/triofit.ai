@@ -10,7 +10,7 @@ export default function NameEntry() {
     const trimmed = name.trim();
     if (trimmed.length < 2) return;
     localStorage.setItem("tf_name", trimmed);
-    navigate("/conversation");
+    navigate("/goal");
   }
 
   return (
