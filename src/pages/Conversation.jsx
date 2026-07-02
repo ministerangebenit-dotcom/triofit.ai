@@ -95,20 +95,49 @@ function RadarBars({ values, dims }) {
   );
 }
 
+const THINKING_MESSAGES = [
+  "Understanding your personality…",
+  "Evaluating confidence signals…",
+  "Comparing outfit goals…",
+  "Reading between the lines of what you said…",
+  "Estimating first impressions…",
+  "Weighing tone against context…",
+  "Looking for inconsistencies…",
+  "Predicting social perception…",
+];
+
 function ThinkingSequence({ onComplete }) {
-  const [msgIndex, setMsgIndex] = useState(0);
-  const [done, setDone] = useState([]);
+  const [progress, setProgress] = useState(0);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
+  const [doneIndexes, setDoneIndexes] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
+    const totalMs = 60000;
+    const stepMs = totalMs / THINKING_MESSAGES.length;
+
     async function run() {
+      const start = Date.now();
+
+      const progressTimer = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const pct = Math.min(100, (elapsed / totalMs) * 100);
+        setProgress(pct);
+        if (pct >= 100) clearInterval(progressTimer);
+      }, 200);
+
       for (let i = 0; i < THINKING_MESSAGES.length; i++) {
-        if (cancelled) return;
-        await new Promise((r) => setTimeout(r, 550));
-        setDone((d) => [...d, i]);
-        setMsgIndex(i + 1);
+        if (cancelled) { clearInterval(progressTimer); return; }
+        setVisibleIndex(i);
+        await new Promise((r) => setTimeout(r, stepMs * 0.75));
+        if (cancelled) { clearInterval(progressTimer); return; }
+        setDoneIndexes((d) => [...d, i]);
+        await new Promise((r) => setTimeout(r, stepMs * 0.25));
       }
-      await new Promise((r) => setTimeout(r, 400));
+
+      clearInterval(progressTimer);
+      setProgress(100);
+      await new Promise((r) => setTimeout(r, 500));
       if (!cancelled) onComplete?.();
     }
     run();
@@ -116,27 +145,50 @@ function ThinkingSequence({ onComplete }) {
   }, []);
 
   return (
-    <div style={{ padding: "20px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-        <FanSpinner size={40} speed={0.6} />
+    <div style={{ padding: "28px 0" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+        <FanSpinner size={72} speed={0.6} />
       </div>
-      <div style={{ maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 8 }}>
-        {THINKING_MESSAGES.map((m, i) => (
+
+      <div style={{ maxWidth: 340, margin: "0 auto 28px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <span>Building your perception profile</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <div style={{ height: 5, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
           <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: done.includes(i) || msgIndex === i ? 1 : 0.15 }}
-            style={{ fontSize: 13, color: done.includes(i) ? "var(--text)" : "var(--text-dim)", display: "flex", alignItems: "center", gap: 8 }}
-          >
-            {done.includes(i) ? <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 14 }} /> : <span style={{ width: 14 }} />}
-            {m}
-          </motion.div>
-        ))}
+            style={{ height: "100%", background: "linear-gradient(90deg, var(--gold-light), var(--gold))" }}
+            animate={{ width: `${progress}%` }}
+            transition={{ ease: "linear", duration: 0.2 }}
+          />
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, minHeight: 200 }}>
+        {THINKING_MESSAGES.map((m, i) => {
+          if (i > visibleIndex) return null;
+          const isDone = doneIndexes.includes(i);
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: isDone ? 0.5 : 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ fontSize: 14, color: isDone ? "var(--text-dim)" : "var(--text)", display: "flex", alignItems: "center", gap: 10 }}
+            >
+              {isDone ? (
+                <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0 }} />
+              ) : (
+                <BoomerangSpinner size={15} />
+              )}
+              {m}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
 }
-
 function AnalysisReveal({ analysis, onChoice }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
