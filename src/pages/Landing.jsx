@@ -50,7 +50,7 @@ export default function Landing() {
             >
 
                 <StartButton
-                    onClick={() => navigate("/conversation")}
+                    onClick={() => navigate("/name")}
                 />
 
             </motion.div>
