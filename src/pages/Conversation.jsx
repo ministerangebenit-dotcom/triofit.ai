@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
+import { FanSpinner, BoomerangSpinner } from "../components/chat/FanSpinner";
+import ChatBackground from "../components/chat/ChatBackground";
+import ThemeToggle from "../components/shared/ThemeToggle";
 
 const PROFILE_QUESTIONS = [
-  { key: "gender", q: "First — how do you identify?", options: ["Male", "Female", "Prefer not to say"] },
-  { key: "age", q: "What's your age range?", options: ["18–24", "25–34", "35–44", "45+"] },
-  { key: "style", q: "Which style feels most like you?", options: ["Classic & elegant", "Streetwear & urban", "Afro-chic", "Casual & relaxed", "Depends on the day"] },
-  { key: "occasion", q: "What are you dressing for right now?", options: ["A professional interview", "An evening out", "A wedding", "Everyday office wear", "A casual event"] },
+  { key: "gender", q: (n) => "First — how do you identify?", options: ["Male", "Female", "Prefer not to say"] },
+  { key: "age", q: () => "What's your age range?", options: ["18–24", "25–34", "35–44", "45+"] },
+  { key: "style", q: () => "Which style feels most like you?", options: ["Classic & elegant", "Streetwear & urban", "Afro-chic", "Casual & relaxed", "Depends on the day"] },
+  { key: "occasion", q: () => "What are you dressing for right now?", options: ["A professional interview", "An evening out", "A wedding", "Everyday office wear", "A casual event"] },
 ];
 
 const TRAITS = [
@@ -18,36 +21,16 @@ const TRAITS = [
 
 const BACKEND = "http://localhost:3001";
 
-function Orb({ thinking }) {
-  return (
-    <div style={{ position: "relative", width: 64, height: 64 }}>
-      <motion.div
-        style={{
-          width: 64, height: 64, borderRadius: "50%",
-          background: "radial-gradient(circle at 35% 30%, #E9C275, #C79B45 55%, #8d6523)",
-        }}
-        animate={{ scale: thinking ? 0.85 : 1 }}
-        transition={{ duration: 0.4 }}
-      />
-      <motion.div
-        style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "1px solid rgba(199,155,69,0.5)" }}
-        animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-  );
-}
-
 function RadarBars({ values }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {TRAITS.map((t) => (
         <div key={t.key}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#ccc", marginBottom: 4 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-dim)", marginBottom: 4 }}>
             <span>{t.label}</span>
-            <span style={{ color: values[t.key] ? t.color : "#8E8E8E" }}>{values[t.key] ?? 0}%</span>
+            <span style={{ color: values[t.key] ? t.color : "var(--muted)" }}>{values[t.key] ?? 0}%</span>
           </div>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 2, overflow: "hidden" }}>
             <motion.div
               style={{ height: "100%", background: t.color }}
               initial={{ width: "0%" }}
@@ -82,11 +65,8 @@ function PerceptionReveal({ traits, finalScore, onComplete }) {
       if (cancelled) return;
       setPhase("complete");
       const steps = [
-        Math.round(finalScore * 0.45),
-        Math.round(finalScore * 0.6),
-        Math.round(finalScore * 0.75),
-        Math.round(finalScore * 0.9),
-        finalScore,
+        Math.round(finalScore * 0.45), Math.round(finalScore * 0.6),
+        Math.round(finalScore * 0.75), Math.round(finalScore * 0.9), finalScore,
       ];
       for (const s of steps) {
         await new Promise((r) => setTimeout(r, 220));
@@ -103,15 +83,15 @@ function PerceptionReveal({ traits, finalScore, onComplete }) {
   return (
     <div style={{ textAlign: "center", padding: "16px 0 24px" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-        <Orb thinking={phase === "thinking"} />
+        <FanSpinner size={44} speed={phase === "thinking" ? 0.6 : 1.4} />
       </div>
-      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "#8E8E8E", textTransform: "uppercase", marginBottom: 16 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 16 }}>
         {phase}
       </div>
       <div style={{ maxWidth: 280, margin: "0 auto 20px" }}>
         <RadarBars values={radarValues} />
       </div>
-      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "#8E8E8E", textTransform: "uppercase", marginBottom: 6 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>
         Perception score
       </div>
       <AnimatePresence mode="wait">
@@ -120,7 +100,8 @@ function PerceptionReveal({ traits, finalScore, onComplete }) {
             key={displayScore}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, color: "#E9C275", lineHeight: 1 }}
+            className="font-display"
+            style={{ fontSize: 44, color: "var(--gold)", lineHeight: 1 }}
           >
             {displayScore}
           </motion.div>
@@ -131,8 +112,9 @@ function PerceptionReveal({ traits, finalScore, onComplete }) {
 }
 
 export default function Conversation() {
+  const userName = localStorage.getItem("tf_name") || "there";
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi Kevin. I'm your TRIOFIT stylist. Let's understand your style before we talk clothes." },
+    { role: "assistant", text: `Hi ${userName}. I'm your TRIOFIT stylist. Let's understand your style before we talk clothes.` },
   ]);
   const [profile, setProfile] = useState({});
   const [step, setStep] = useState(0);
@@ -143,29 +125,16 @@ export default function Conversation() {
   const [profileDone, setProfileDone] = useState(false);
   const endRef = useRef(null);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, thinking, showReveal]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, thinking, showReveal]);
+  useEffect(() => { const t = setTimeout(() => askNext(0), 800); return () => clearTimeout(t); }, []);
 
-  useEffect(() => {
-    const t = setTimeout(() => askNext(0), 800);
-    return () => clearTimeout(t);
-  }, []);
-
-  function pushAssistant(text) {
-    setMessages((m) => [...m, { role: "assistant", text }]);
-  }
-  function pushUser(text) {
-    setMessages((m) => [...m, { role: "user", text }]);
-  }
+  function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
+  function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
   function askNext(i) {
     if (i >= PROFILE_QUESTIONS.length) return;
     setThinking(true);
-    setTimeout(() => {
-      setThinking(false);
-      pushAssistant(PROFILE_QUESTIONS[i].q);
-    }, 700);
+    setTimeout(() => { setThinking(false); pushAssistant(PROFILE_QUESTIONS[i].q(userName)); }, 700);
   }
 
   async function handleOption(opt) {
@@ -173,7 +142,6 @@ export default function Conversation() {
     pushUser(opt);
     const updated = { ...profile, [q.key]: opt };
     setProfile(updated);
-
     const next = step + 1;
     setStep(next);
 
@@ -184,10 +152,7 @@ export default function Conversation() {
           setRevealData(res.data);
           setShowReveal(true);
         } catch {
-          setRevealData({
-            traits: { confidence: 75, professionalism: 82, approachability: 68, authority: 79 },
-            finalScore: 84,
-          });
+          setRevealData({ traits: { confidence: 75, professionalism: 82, approachability: 68, authority: 79 }, finalScore: 84 });
           setShowReveal(true);
         }
       }, 400);
@@ -203,12 +168,7 @@ export default function Conversation() {
     try {
       const res = await axios.post(`${BACKEND}/chat`, {
         profile,
-        messages: [
-          {
-            role: "user",
-            text: `My profile: ${JSON.stringify(profile)}. Give me one specific outfit recommendation for this occasion.`,
-          },
-        ],
+        messages: [{ role: "user", text: `My profile: ${JSON.stringify(profile)}. Give me one specific outfit recommendation for this occasion.` }],
       });
       setThinking(false);
       pushAssistant(res.data.reply);
@@ -238,12 +198,13 @@ export default function Conversation() {
   }
 
   const currentQ = PROFILE_QUESTIONS[step];
-  const showOptions =
-    currentQ && !thinking && !showReveal && messages[messages.length - 1]?.text === currentQ.q;
+  const showOptions = currentQ && !thinking && !showReveal && messages[messages.length - 1]?.text === currentQ.q(userName);
 
   return (
-    <div className="h-screen flex flex-col bg-black">
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+    <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
+      <ThemeToggle />
+      <ChatBackground />
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
         <AnimatePresence>
           {messages.map((m, i) => (
             <motion.div
@@ -253,11 +214,12 @@ export default function Conversation() {
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                  m.role === "user"
-                    ? "bg-[#C79B45]/10 border border-[#C79B45]/30 text-white"
-                    : "bg-[#121212] text-gray-200"
-                }`}
+                style={{
+                  maxWidth: "78%", padding: "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
+                  background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
+                  border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
+                  color: "var(--text)",
+                }}
               >
                 {m.text}
               </div>
@@ -266,29 +228,32 @@ export default function Conversation() {
         </AnimatePresence>
 
         {thinking && (
-          <div className="flex justify-start">
-            <div className="bg-[#121212] px-4 py-3 rounded-2xl text-sm text-gray-400 italic">thinking…</div>
+          <div className="flex justify-start items-center" style={{ gap: 8 }}>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <BoomerangSpinner size={20} />
+              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>thinking…</span>
+            </div>
           </div>
         )}
 
         {showReveal && revealData && (
-          <PerceptionReveal
-            traits={revealData.traits}
-            finalScore={revealData.finalScore}
-            onComplete={onRevealComplete}
-          />
+          <PerceptionReveal traits={revealData.traits} finalScore={revealData.finalScore} onComplete={onRevealComplete} />
         )}
 
         <div ref={endRef} />
       </div>
 
       {showOptions && (
-        <div className="px-6 pb-3 flex flex-wrap gap-2">
+        <div className="px-6 pb-3 flex flex-wrap gap-2 relative" style={{ zIndex: 1 }}>
           {currentQ.options.map((opt) => (
             <button
               key={opt}
               onClick={() => handleOption(opt)}
-              className="px-4 py-2 rounded-full border border-[#C79B45]/40 text-[#C79B45] text-sm hover:bg-[#C79B45]/10 transition"
+              style={{
+                padding: "8px 16px", borderRadius: 20, fontSize: 13,
+                border: "1px solid rgba(199,155,69,0.4)", color: "var(--gold)",
+                background: "transparent", cursor: "pointer",
+              }}
             >
               {opt}
             </button>
@@ -297,15 +262,21 @@ export default function Conversation() {
       )}
 
       {profileDone && (
-        <div className="px-6 pb-6 flex gap-2">
+        <div className="px-6 pb-6 flex gap-2 relative" style={{ zIndex: 1 }}>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
             placeholder="Ask your stylist…"
-            className="flex-1 bg-[#121212] border border-white/10 rounded-full px-4 py-3 text-sm outline-none focus:border-[#C79B45]/50"
+            style={{
+              flex: 1, background: "var(--surface)", border: "1px solid var(--border-soft)",
+              borderRadius: 50, padding: "12px 18px", fontSize: 14, color: "var(--text)", outline: "none",
+            }}
           />
-          <button onClick={sendFreeText} className="px-5 py-3 rounded-full bg-[#C79B45] text-black font-semibold text-sm">
+          <button
+            onClick={sendFreeText}
+            style={{ padding: "12px 20px", borderRadius: 50, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+          >
             Send
           </button>
         </div>
