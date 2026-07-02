@@ -5,15 +5,27 @@
 <title>TRIOFIT Admin</title>
 <style>
   body { font-family: -apple-system, sans-serif; background: #16151a; color: #eee; margin: 0; padding: 24px; }
-  h1 { font-size: 18px; color: #C79B45; margin-bottom: 20px; }
+  h1 { font-size: 18px; color: #C79B45; margin-bottom: 6px; }
+  .stat-bar { font-size: 12px; color: #888; margin-bottom: 20px; }
+  .stat-bar span { color: #C79B45; font-weight: 600; }
   .queue-item { background: #1f1e23; border: 1px solid #2a292e; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
   .queue-item .meta { font-size: 12px; color: #999; margin-bottom: 8px; }
   .queue-item .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .queue-item .suggestion { display: flex; gap: 12px; align-items: center; margin-top: 12px; background: #17161a; padding: 10px; border-radius: 8px; }
-  .queue-item .suggestion img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
-  .queue-item .suggestion-desc { font-size: 13px; flex: 1; }
+  .confidence { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+  .confidence.high { background: rgba(93,202,165,0.15); color: #5DCAA5; }
+  .confidence.mid { background: rgba(199,155,69,0.15); color: #C79B45; }
+  .confidence.low { background: rgba(216,90,48,0.15); color: #D85A30; }
+  .suggestion { display: flex; gap: 12px; align-items: center; margin-top: 12px; background: #17161a; padding: 10px; border-radius: 8px; }
+  .suggestion img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+  .suggestion-desc { font-size: 13px; flex: 1; }
+  .action-row { display: flex; gap: 8px; margin-top: 10px; }
   button { background: #C79B45; border: none; color: #080808; font-weight: 700; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
   button.secondary { background: transparent; border: 1px solid #444; color: #ccc; }
+  .picker { display: none; margin-top: 12px; background: #17161a; border-radius: 8px; padding: 10px; }
+  .picker.open { display: block; }
+  .picker-item { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; cursor: pointer; }
+  .picker-item:hover { background: #232226; }
+  .picker-item img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
   .template-form { background: #1f1e23; border-radius: 12px; padding: 16px; margin-top: 30px; }
   .template-form input, .template-form select { width: 100%; padding: 8px; margin-bottom: 8px; background: #17161a; border: 1px solid #333; border-radius: 6px; color: #eee; font-size: 13px; box-sizing: border-box; }
   .row { display: flex; gap: 8px; }
@@ -26,6 +38,7 @@
 <body>
 
 <h1>TRIOFIT — Admin</h1>
+<div class="stat-bar" id="statBar">Loading stats…</div>
 
 <div class="tabs">
   <button id="tabQueue" class="active" onclick="showTab('queue')">Image queue</button>
@@ -70,6 +83,7 @@
 
 <script>
 const API = "http://localhost:3001/api";
+let allTemplatesCache = [];
 
 function showTab(tab) {
   document.getElementById('queueView').style.display = tab === 'queue' ? 'block' : 'none';
@@ -77,6 +91,23 @@ function showTab(tab) {
   document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
   document.getElementById('tabTemplates').classList.toggle('active', tab === 'templates');
   if (tab === 'queue') loadQueue();
+}
+
+function confidenceClass(c) {
+  if (c >= 85) return 'high';
+  if (c >= 65) return 'mid';
+  return 'low';
+}
+
+async function loadStats() {
+  const res = await fetch(`${API}/admin/corrections`);
+  const data = await res.json();
+  const bar = document.getElementById('statBar');
+  if (data.stats.total === 0) {
+    bar.textContent = 'No recommendations sent yet.';
+    return;
+  }
+  bar.innerHTML = `AI match accuracy: <span>${data.stats.accuracy}%</span> · ${data.stats.total} sent · ${data.stats.overrides} overridden`;
 }
 
 async function loadQueue() {
@@ -90,30 +121,60 @@ async function loadQueue() {
     return;
   }
 
+  const { data: allTemplates } = await fetch(`${API}/templates`).then(r => r.json()).then(d => ({data: d})).catch(() => ({data: []}));
+  allTemplatesCache = allTemplates || [];
+
   list.className = '';
   list.innerHTML = data.map(item => `
     <div class="queue-item">
-      <div class="meta">${item.sessions?.occasion || ''} · goal: ${item.sessions?.goal || ''}</div>
-      <div class="name">${item.sessions?.name || 'Unknown'}</div>
-      <div class="meta">Reason: ${item.suggestion_reason || ''}</div>
+      <div class="meta">${item.sessions?.occasion || ''} · goal: ${item.sessions?.goal || ''} · style: ${item.sessions?.style || ''}</div>
+      <div class="name">${item.sessions?.name || 'Unknown'}
+        <span class="confidence ${confidenceClass(item.ai_confidence || 0)}">${item.ai_confidence ?? '?'}% confidence</span>
+      </div>
       ${item.outfit_templates ? `
         <div class="suggestion">
           <img src="${item.outfit_templates.image_url}" onerror="this.style.display='none'">
           <div class="suggestion-desc">${item.outfit_templates.description}</div>
-          <button onclick="sendTemplate('${item.session_id}', '${item.suggested_template_id}')">Send this</button>
+        </div>
+        <div class="action-row">
+          <button onclick="sendSuggested('${item.session_id}')">Send suggested</button>
+          <button class="secondary" onclick="togglePicker('${item.session_id}')">Choose different</button>
+        </div>
+        <div class="picker" id="picker-${item.session_id}">
+          ${allTemplatesCache.map(t => `
+            <div class="picker-item" onclick="sendOverride('${item.session_id}', '${t.id}')">
+              <img src="${t.image_url}" onerror="this.style.display='none'">
+              <div>${t.description}</div>
+            </div>
+          `).join('')}
         </div>
       ` : '<div class="empty">No suggestion matched — add a template.</div>'}
     </div>
   `).join('');
 }
 
-async function sendTemplate(sessionId, templateId) {
+function togglePicker(sessionId) {
+  document.getElementById(`picker-${sessionId}`).classList.toggle('open');
+}
+
+async function sendSuggested(sessionId) {
   await fetch(`${API}/templates/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId })
+  });
+  loadQueue();
+  loadStats();
+}
+
+async function sendOverride(sessionId, templateId) {
+  await fetch(`${API}/templates/override`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, template_id: templateId })
   });
   loadQueue();
+  loadStats();
 }
 
 async function addTemplate() {
@@ -140,7 +201,8 @@ async function addTemplate() {
 }
 
 loadQueue();
-setInterval(loadQueue, 5000);
+loadStats();
+setInterval(() => { loadQueue(); loadStats(); }, 5000);
 </script>
 </body>
 </html>
