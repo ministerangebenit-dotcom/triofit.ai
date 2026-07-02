@@ -6,7 +6,7 @@ import ChatBackground from "../components/chat/ChatBackground";
 import ThemeToggle from "../components/shared/ThemeToggle";
 import { sb } from "../lib/supabase";
 
-const BACKEND = "http://localhost:3001/api";
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001/api";
 
 const GOAL_LABELS = {
   job: "getting the job",
