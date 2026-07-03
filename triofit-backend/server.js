@@ -13,29 +13,29 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://triofit-ai.pages.dev",
-      "https://*.triofit-ai.pages.dev",
-    ],
-    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        origin.endsWith(".pages.dev") ||
+        origin === "http://localhost:5173" ||
+        origin === "https://triofit-ai.pages.dev"
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
   })
 );
 
 app.use(express.json());
 
-// ✅ CLEAN ROUTES
-app.use("/api/chat", messageRoutes);
-app.use("/api/session", sessionRoutes);
-app.use("/api/analysis", analysisRoutes);
-app.use("/api/templates", templateRoutes);
+app.use("/api", sessionRoutes);
+app.use("/api", messageRoutes);
+app.use("/api", analysisRoutes);
+app.use("/api", templateRoutes);
 
-app.get("/health", (req, res) => {
-  res.json({ ok: true });
-});
+app.get("/health", (req, res) => res.json({ ok: true }));
 
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, () => {
-  console.log("Triofit backend running on port", PORT);
+app.listen(process.env.PORT || 3001, () => {
+  console.log("Triofit backend running on port", process.env.PORT || 3001);
 });
