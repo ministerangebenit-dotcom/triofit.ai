@@ -4,79 +4,92 @@ import { chatCompletion } from "../lib/groq.js";
 
 const router = express.Router();
 
-// Save message (safe version)
-router.post("/", async (req, res) => {
-  try {
-    const { session_id, sender, message, message_type, image_url } = req.body;
+// Save message
+router.post("/messages", async (req, res) => {
+  const { session_id, sender, message, message_type, image_url } = req.body;
 
-    const { data, error } = await supabase
-      .from("messages")
-      .insert({
-        session_id,
-        sender,
-        message,
-        message_type: message_type || "text",
-        image_url: image_url || null,
-      })
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      session_id,
+      sender,
+      message,
+      message_type: message_type || "text",
+      image_url,
+    })
+    .select()
+    .single();
 
-    if (error) throw error;
+  if (error) return res.status(500).json({ error: error.message });
 
-    res.json(data);
-  } catch (err) {
-    console.error("Message insert error:", err);
-    res.status(500).json({ error: "Failed to save message" });
-  }
+  res.json(data);
 });
 
 // Get messages
-router.get("/:sessionId", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("session_id", req.params.sessionId)
-      .order("created_at", { ascending: true });
+router.get("/messages/:sessionId", async (req, res) => {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("session_id", req.params.sessionId)
+    .order("created_at", { ascending: true });
 
-    if (error) throw error;
+  if (error) return res.status(500).json({ error: error.message });
 
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch messages" });
-  }
+  res.json(data);
 });
 
-// CHAT (FIXED + SAFE)
+
+// CHAT (IMPROVED — no form logic, natural conversation + extraction optional)
 router.post("/chat", async (req, res) => {
   try {
     const { session_id, messages } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Invalid messages format" });
-    }
+    const systemPrompt = {
+      role: "system",
+      content: `
+You are Triofit AI.
 
-    let reply;
+You talk naturally like a stylist assistant.
 
-    try {
-      reply = await chatCompletion(messages);
-    } catch (aiErr) {
-      console.error("Groq error:", aiErr);
-      reply = "I'm having trouble thinking right now. Try again in a moment.";
-    }
+You do NOT force forms or questionnaires.
+
+You extract user info silently when possible:
+- name
+- goal (fitness, style, etc.)
+- preferences
+- body type hints
+- clothing needs
+
+When appropriate, respond conversationally AND embed structured JSON at the END like:
+
+<DATA>{
+  "name": "",
+  "goal": "",
+  "style": "",
+  "budget": ""
+}</DATA>
+
+If nothing is clear, do NOT output JSON.
+
+Be natural first. Extraction is secondary.
+      `,
+    };
+
+    const fullMessages = [systemPrompt, ...messages];
+
+    const reply = await chatCompletion(fullMessages);
 
     await supabase.from("messages").insert({
       session_id,
-      sender: "admin",
+      sender: "ai",
       message: reply,
       message_type: "text",
     });
 
     res.json({ reply });
   } catch (err) {
-    console.error("Chat route error:", err);
-    res.status(500).json({ reply: "Server error." });
+    console.error(err);
+    res.status(500).json({ reply: "AI error" });
   }
 });
 
