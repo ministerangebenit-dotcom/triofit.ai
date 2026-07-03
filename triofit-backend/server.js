@@ -10,7 +10,23 @@ import templateRoutes from "./routes/templates.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        origin.endsWith(".pages.dev") ||
+        origin === "http://localhost:5173" ||
+        origin === "https://triofit-ai.pages.dev"
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+  })
+);
+
 app.use(express.json());
 
 app.use("/api", sessionRoutes);
