@@ -1,22 +1,33 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
 export async function chatCompletion(messages) {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-70b-versatile",
-      messages,
-      temperature: 0.7,
-    }),
-  });
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages,
+        temperature: 0.7,
+      }),
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Groq API error: ${err}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Groq error:", data);
+      throw new Error(data?.error?.message || "Groq request failed");
+    }
+
+    return data.choices[0].message.content;
+  } catch (err) {
+    console.error("Groq crash:", err);
+    throw err;
   }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "";
 }
