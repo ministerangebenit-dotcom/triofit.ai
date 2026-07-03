@@ -15,7 +15,7 @@ export default function ChatInput({ onSend }) {
       <input
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Type your message..."
+        placeholder="Ask Triofit..."
         className="
           flex-1
           px-4 py-3
