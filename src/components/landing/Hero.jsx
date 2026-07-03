@@ -86,9 +86,9 @@ export default function Hero() {
 
       >
 
-        Know exactly how you'll be perceived
-        before you walk into the room.
-
+        With me on your team, you'll always 
+        make te right impression.
+        
       </motion.p>
 
     </div>
