@@ -22,18 +22,18 @@ export default function Landing() {
         <motion.div
           style={{
             position: "relative",
-            width: 72,
-            height: 72,
+            width: 82,
+            height: 82,
             margin: "0 auto",
           }}
           initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
+          animate={{ opacity: 2, scale: 2 }}
+          transition={{ duration: 0.9 }}
         >
           <div
             style={{
-              width: 72,
-              height: 72,
+              width: 82,
+              height: 82,
               borderRadius: "50%",
               background:
                 "radial-gradient(circle at 35% 30%, #E9C275, #C79B45 55%, #8d6523)",
@@ -48,11 +48,11 @@ export default function Landing() {
               border: "1px solid rgba(199,155,69,0.5)",
             }}
             animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.6, 0, 0.6],
+              scale: [1, 1.6, 1],
+              opacity: [0.9, 0, 0.9],
             }}
             transition={{
-              duration: 2,
+              duration: 3,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -72,7 +72,7 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          How will you be seen?
+          Decide how you want to be percieved.
         </motion.h1>
 
         {/* SUBTITLE */}
@@ -87,9 +87,10 @@ export default function Landing() {
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.7 }}
         >
-          Know exactly how you'll be perceived before you walk into the room.
+          Know exactly how you are cuurently percieved
+          and how to alter tghat perception.
         </motion.p>
 
         {/* CTA */}
@@ -114,7 +115,7 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          Begin →
+            AGREE→
         </motion.button>
       </div>
     </div>
