@@ -27,7 +27,7 @@ export default function NameEntry() {
           Welcome
         </div>
         <h1 className="font-display" style={{ fontSize: 26, color: "var(--text)", marginBottom: 8 }}>
-          What's your name?
+         If we're going to do this, i'll need to know your name. 
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-dim)", marginBottom: 28, lineHeight: 1.6 }}>
           Your personal stylist is ready.
@@ -56,7 +56,7 @@ export default function NameEntry() {
             cursor: name.trim().length < 2 ? "default" : "pointer",
           }}
         >
-          Continue
+          Proceed
         </button>
       </motion.div>
     </div>
