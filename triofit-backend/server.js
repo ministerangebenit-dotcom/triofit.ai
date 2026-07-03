@@ -6,35 +6,46 @@ import sessionRoutes from "./routes/session.js";
 import messageRoutes from "./routes/messages.js";
 import analysisRoutes from "./routes/analysis.js";
 import templateRoutes from "./routes/templates.js";
+import chatRoutes from "./routes/chat.js";
 
 dotenv.config();
 
 const app = express();
 
-// IMPORTANT: make CORS stable for Cloudflare + Railway
 app.use(
   cors({
-    origin: "*", // TEMP: stabilize first, restrict later
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (
+        origin.endsWith(".pages.dev") ||
+        origin === "http://localhost:5173" ||
+        origin === "https://triofit-ai.pages.dev"
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
   })
 );
 
 app.use(express.json());
 
-// health check (Railway monitoring)
+// routes
+app.use("/api", sessionRoutes);
+app.use("/api", messageRoutes);
+app.use("/api", analysisRoutes);
+app.use("/api", templateRoutes);
+
+// ✅ NEW CLEAN CHAT ROUTE
+app.use("/api/chat", chatRoutes);
+
+// health check
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// API routes
-app.use("/api/session", sessionRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/analysis", analysisRoutes);
-app.use("/api/templates", templateRoutes);
-
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Triofit backend running on port", PORT);
+app.listen(process.env.PORT || 3001, () => {
+  console.log("Triofit backend running on port", process.env.PORT || 3001);
 });
