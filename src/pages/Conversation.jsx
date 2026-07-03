@@ -8,32 +8,12 @@ import { sb } from "../lib/supabase";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001/api";
 
-const GOAL_LABELS = {
-  job: "getting the job",
-  date: "the date",
-  wealth: "looking wealthier",
-  wedding: "the wedding",
-  authority: "building authority",
-  brand: "your personal brand",
-};
-
-const PROFILE_QUESTIONS = [
-  { key: "gender", q: () => "Before I recommend anything, I want to understand who I'm dressing. How do you identify?", options: ["Male", "Female", "Prefer not to say"] },
-  { key: "age", q: () => "And which age range fits you?", options: ["18–24", "25–34", "35–44", "45+"] },
-  { key: "style", q: () => "Now tell me — which style feels most like you, on a normal day?", options: ["Classic & elegant", "Streetwear & urban", "Afro-chic", "Casual & relaxed", "Depends on the day"] },
-  { key: "occasion", q: (goal) => `Since you're focused on ${GOAL_LABELS[goal] || "this"}, what's the actual setting?`, options: ["A professional interview", "An evening out", "A wedding", "Everyday office wear", "A casual event"] },
-];
-
-const THINKING_MESSAGES = [
-  "Understanding your personality…",
-  "Evaluating confidence signals…",
-  "Comparing outfit goals…",
-  "Reading between the lines of what you said…",
-  "Estimating first impressions…",
-  "Weighing tone against context…",
-  "Looking for inconsistencies…",
-  "Predicting social perception…",
-];
+/**
+ * SYSTEM SHIFT:
+ * - no rigid questionnaire flow
+ * - everything becomes conversational
+ * - extraction happens silently in backend (or optional AI parse layer)
+ */
 
 const BLUEPRINT_DIMENSIONS = [
   { key: "confidence", label: "Confidence", color: "#C79B45" },
@@ -45,221 +25,52 @@ const BLUEPRINT_DIMENSIONS = [
 
 const DECLINE_TIPS = [
   "Arrive 10-15 minutes early — punctuality reads as respect before you say a word.",
-  "Keep your clothes wrinkle-free, even a simple outfit looks careless if it's creased.",
+  "Keep your clothes wrinkle-free.",
   "Keep your phone out of sight during introductions.",
-  "Maintain eye contact during your first greeting — it carries more weight than the outfit.",
+  "Maintain eye contact during your first greeting.",
 ];
-
-function RadarBars({ values, dims }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {dims.map((t) => (
-        <div key={t.key}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-dim)", marginBottom: 4 }}>
-            <span>{t.label}</span>
-            <span style={{ color: values[t.key] ? t.color : "var(--muted)" }}>{values[t.key] ?? 0}%</span>
-          </div>
-          <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 2, overflow: "hidden" }}>
-            <motion.div
-              style={{ height: "100%", background: t.color }}
-              initial={{ width: "0%" }}
-              animate={{ width: `${values[t.key] ?? 0}%` }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ThinkingSequence({ onComplete }) {
-  const [progress, setProgress] = useState(0);
-  const [visibleIndex, setVisibleIndex] = useState(-1);
-  const [doneIndexes, setDoneIndexes] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const totalMs = 60000;
-    const stepMs = totalMs / THINKING_MESSAGES.length;
-
-    async function run() {
-      const start = Date.now();
-      const progressTimer = setInterval(() => {
-        const elapsed = Date.now() - start;
-        const pct = Math.min(100, (elapsed / totalMs) * 100);
-        setProgress(pct);
-        if (pct >= 100) clearInterval(progressTimer);
-      }, 200);
-
-      for (let i = 0; i < THINKING_MESSAGES.length; i++) {
-        if (cancelled) { clearInterval(progressTimer); return; }
-        setVisibleIndex(i);
-        await new Promise((r) => setTimeout(r, stepMs * 0.75));
-        if (cancelled) { clearInterval(progressTimer); return; }
-        setDoneIndexes((d) => [...d, i]);
-        await new Promise((r) => setTimeout(r, stepMs * 0.25));
-      }
-
-      clearInterval(progressTimer);
-      setProgress(100);
-      await new Promise((r) => setTimeout(r, 500));
-      if (!cancelled) onComplete?.();
-    }
-    run();
-    return () => { cancelled = true; };
-  }, []);
-
-  return (
-    <div style={{ padding: "28px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-        <FanSpinner size={72} speed={0.6} />
-      </div>
-      <div style={{ maxWidth: 340, margin: "0 auto 28px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-          <span>Building your perception profile</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div style={{ height: 5, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
-          <motion.div
-            style={{ height: "100%", background: "linear-gradient(90deg, var(--gold-light), var(--gold))" }}
-            animate={{ width: `${progress}%` }}
-            transition={{ ease: "linear", duration: 0.2 }}
-          />
-        </div>
-      </div>
-      <div style={{ maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, minHeight: 200 }}>
-        {THINKING_MESSAGES.map((m, i) => {
-          if (i > visibleIndex) return null;
-          const isDone = doneIndexes.includes(i);
-          return (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: isDone ? 0.5 : 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              style={{ fontSize: 14, color: isDone ? "var(--text-dim)" : "var(--text)", display: "flex", alignItems: "center", gap: 10 }}
-            >
-              {isDone ? <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0 }} /> : <BoomerangSpinner size={15} />}
-              {m}
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function AnalysisReveal({ analysis, onChoice }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Here's the impression you've created in my mind
-      </div>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
-        <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", marginBottom: 12 }}>{analysis.impression}</p>
-        <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>Why I think that</div>
-        {analysis.reasons.map((r, i) => (
-          <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 4, display: "flex", gap: 6 }}>
-            <span style={{ color: "var(--gold)" }}>—</span>{r}
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <div>{analysis.traits.strong.map((t) => <span key={t} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {t}</span>)}</div>
-        <div>{analysis.traits.caution.map((t) => <span key={t} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {t}</span>)}</div>
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
-      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>Let's fix that together.</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button onClick={() => onChoice("improve")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          Yes, improve my appearance
-        </button>
-        <button onClick={() => onChoice("keep")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
-          I'll keep my current outfit
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-function WaitingForStylist() {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: "center", padding: "24px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-        <BoomerangSpinner size={28} />
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)" }}>Your stylist is hand-picking your outfit now…</p>
-    </motion.div>
-  );
-}
-
-function Blueprint({ blueprint }) {
-  const [values, setValues] = useState({});
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      for (const d of BLUEPRINT_DIMENSIONS) {
-        await new Promise((r) => setTimeout(r, 300));
-        if (cancelled) return;
-        setValues((v) => ({ ...v, [d.key]: blueprint[d.key] }));
-      }
-    }
-    run();
-    return () => { cancelled = true; };
-  }, []);
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Perception blueprint
-      </div>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16 }}>
-        <RadarBars values={values} dims={BLUEPRINT_DIMENSIONS} />
-      </div>
-    </motion.div>
-  );
-}
-
-function DeclinePath() {
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, lineHeight: 1.7 }}>
-        I respect your decision. Here are things that will improve your first impression without changing your outfit.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {DECLINE_TIPS.map((t, i) => (
-          <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", display: "flex", gap: 8 }}>
-            <span style={{ color: "var(--gold)" }}>—</span>{t}
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
 function MessageActions({ text }) {
   const [copied, setCopied] = useState(false);
-  const [liked, setLiked] = useState(null);
   const [playing, setPlaying] = useState(false);
 
-  function copyText() { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  function copyText() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   function playVoice() {
     if (!("speechSynthesis" in window)) return;
-    if (playing) { window.speechSynthesis.cancel(); setPlaying(false); return; }
+
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
+
     const utter = new SpeechSynthesisUtterance(text);
     utter.onend = () => setPlaying(false);
     setPlaying(true);
     window.speechSynthesis.speak(utter);
   }
-  const iconBtn = { background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4, fontSize: 14 };
+
+  const iconBtn = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-dim)",
+    padding: 4,
+  };
 
   return (
-    <div style={{ display: "flex", gap: 10, marginTop: 6, marginLeft: 2 }}>
-      <button onClick={copyText} style={iconBtn} aria-label="Copy"><i className={copied ? "ti ti-check" : "ti ti-copy"} style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={playVoice} style={iconBtn} aria-label="Play"><i className={playing ? "ti ti-player-pause" : "ti ti-player-play"} style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={() => setLiked(liked === "up" ? null : "up")} style={iconBtn} aria-label="Like"><i className="ti ti-thumb-up" style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={() => setLiked(liked === "down" ? null : "down")} style={iconBtn} aria-label="Dislike"><i className="ti ti-thumb-down" style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }} /></button>
+    <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+      <button onClick={copyText} style={iconBtn}>
+        {copied ? "✓" : "⧉"}
+      </button>
+      <button onClick={playVoice} style={iconBtn}>
+        {playing ? "⏸" : "▶"}
+      </button>
     </div>
   );
 }
@@ -276,37 +87,49 @@ function genSessionId() {
 export default function Conversation() {
   const userName = localStorage.getItem("tf_name") || "there";
   const goal = localStorage.getItem("tf_goal") || "authority";
+
   const sessionId = useRef(genSessionId()).current;
 
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${userName}. I'm your TRIOFIT stylist. Let's understand your style before we talk clothes.` },
+    {
+      role: "assistant",
+      text: `Hi ${userName}. Tell me what you're trying to achieve — I’ll understand your style from how you speak.`,
+    },
   ]);
+
   const [profile, setProfile] = useState({});
-  const [step, setStep] = useState(0);
+  const [input, setInput] = useState("");
+
+  const [stage, setStage] = useState("chat"); // chat → thinking → analysis → blueprint → decline
   const [thinking, setThinking] = useState(false);
-  const [stage, setStage] = useState("questions");
   const [analysis, setAnalysis] = useState(null);
   const [blueprintData, setBlueprintData] = useState(null);
-  const [input, setInput] = useState("");
-  const [profileDone, setProfileDone] = useState(false);
+
   const endRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, thinking, stage]);
-  useEffect(() => { const t = setTimeout(() => askNext(0), 800); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking, stage]);
 
+  /**
+   * SUPABASE LIVE UPDATES (kept intact)
+   */
   useEffect(() => {
     const chatChannel = sb
       .channel("chat-" + sessionId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const m = payload.new;
-        if (m.session_id !== sessionId || m.sender !== "admin") return;
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const m = payload.new;
+          if (m.session_id !== sessionId || m.sender !== "admin") return;
 
-        if (m.message_type === "image") {
-          setMessages((msgs) => [...msgs, { role: "assistant", text: m.message, image: m.image_url }]);
-        } else {
-          setMessages((msgs) => [...msgs, { role: "assistant", text: m.message }]);
+          setMessages((msgs) => [
+            ...msgs,
+            { role: "assistant", text: m.message },
+          ]);
         }
-      })
+      )
       .subscribe();
 
     const scoreChannel = sb
@@ -323,165 +146,214 @@ export default function Conversation() {
     };
   }, [sessionId]);
 
-  function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
-  function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
-
-  function askNext(i) {
-    if (i >= PROFILE_QUESTIONS.length) return;
-    setThinking(true);
-    setTimeout(() => { setThinking(false); pushAssistant(PROFILE_QUESTIONS[i].q(goal)); }, 700);
+  function pushUser(text) {
+    setMessages((m) => [...m, { role: "user", text }]);
   }
 
-  async function handleOption(opt) {
-    const q = PROFILE_QUESTIONS[step];
-    pushUser(opt);
-    const updated = { ...profile, [q.key]: opt };
-    setProfile(updated);
-    const next = step + 1;
-    setStep(next);
+  function pushAssistant(text) {
+    setMessages((m) => [...m, { role: "assistant", text }]);
+  }
 
-    if (next >= PROFILE_QUESTIONS.length) {
-      await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, ...updated });
-      setTimeout(async () => {
-        setStage("thinking");
-        try {
-          const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile: updated, goal });
-          setAnalysis(res.data);
-        } catch {
-          setAnalysis({
-            impression: "I'm having trouble reaching your stylist brain right now.",
-            reasons: [], traits: { strong: [], caution: [] }, prediction: "", blueprint: {},
-          });
-        }
-      }, 400);
-    } else {
-      setTimeout(() => askNext(next), 500);
+  /**
+   * MAIN SHIFT:
+   * NO FORMS — everything is natural chat
+   * backend extracts profile silently
+   */
+  async function sendMessage() {
+    if (!input.trim()) return;
+
+    const text = input.trim();
+    setInput("");
+
+    pushUser(text);
+    setThinking(true);
+
+    try {
+      const res = await axios.post(`${BACKEND}/chat`, {
+        session_id: sessionId,
+        message: text,
+        goal,
+        profile,
+      });
+
+      /**
+       * backend returns:
+       * - reply
+       * - optional extracted_profile updates
+       */
+      if (res.data?.reply) {
+        pushAssistant(res.data.reply);
+      }
+
+      if (res.data?.profile) {
+        setProfile((p) => ({ ...p, ...res.data.profile }));
+      }
+    } catch (e) {
+      pushAssistant("Connection issue — stylist brain unavailable.");
+    }
+
+    setThinking(false);
+  }
+
+  async function triggerAnalysis() {
+    setStage("thinking");
+
+    try {
+      const res = await axios.post(`${BACKEND}/analysis`, {
+        session_id: sessionId,
+        profile,
+        goal,
+        messages,
+      });
+
+      setAnalysis(res.data);
+      setStage("analysis");
+    } catch {
+      setAnalysis({
+        impression: "Unable to analyze right now.",
+        reasons: [],
+        traits: { strong: [], caution: [] },
+        prediction: "",
+        blueprint: {},
+      });
+
+      setStage("analysis");
     }
   }
 
-  function onThinkingComplete() {
-    setStage("analysis");
-  }
-
-  async function onAnalysisChoice(choice) {
-    setProfileDone(true);
+  function onChoice(choice) {
     if (choice === "keep") {
       setStage("decline");
       return;
     }
-
-    setStage("waiting");
-    try {
-      const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile });
-      if (!res.data.suggestion) {
-        pushAssistant("I don't have a matching outfit template yet — your stylist will add one shortly.");
-      }
-    } catch {
-      pushAssistant("Having trouble reaching the outfit catalog right now.");
-    }
+    triggerAnalysis();
   }
-
-  function sendFreeText() {
-    if (!input.trim()) return;
-    const text = input.trim();
-    setInput("");
-    pushUser(text);
-    setThinking(true);
-    axios
-      .post(`${BACKEND}/chat`, {
-        session_id: sessionId,
-        profile,
-        messages: [...messages, { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
-      })
-      .then((res) => { setThinking(false); pushAssistant(res.data.reply); })
-      .catch(() => { setThinking(false); pushAssistant("Connection issue — is the backend running?"); });
-  }
-
-  const currentQ = PROFILE_QUESTIONS[step];
-  const showOptions = currentQ && !thinking && stage === "questions" && messages[messages.length - 1]?.text === currentQ.q(goal);
 
   return (
-    <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
+    <div
+      className="h-screen flex flex-col relative"
+      style={{ background: "var(--bg)" }}
+    >
       <ThemeToggle />
       <ChatBackground />
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
+
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
         <AnimatePresence>
           {messages.map((m, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+              className={`flex flex-col ${
+                m.role === "user" ? "items-end" : "items-start"
+              }`}
             >
               <div
                 style={{
-                  maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
-                  background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
-                  border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
+                  maxWidth: "78%",
+                  padding: "11px 16px",
+                  borderRadius: 16,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  background:
+                    m.role === "user"
+                      ? "rgba(199,155,69,0.1)"
+                      : "var(--surface)",
+                  border:
+                    m.role === "user"
+                      ? "1px solid rgba(199,155,69,0.3)"
+                      : "1px solid var(--border-soft)",
                   color: "var(--text)",
                 }}
               >
-                {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
-                <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
+                {m.text}
               </div>
-              {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
+
+              {m.role === "assistant" && (
+                <MessageActions text={m.text} />
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
 
         {thinking && (
-          <div className="flex justify-start items-center" style={{ gap: 8 }}>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <BoomerangSpinner size={20} />
-              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>thinking…</span>
-            </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <BoomerangSpinner size={18} />
+            <span style={{ color: "var(--text-dim)", fontSize: 13 }}>
+              thinking...
+            </span>
           </div>
         )}
-
-        {stage === "thinking" && <ThinkingSequence onComplete={onThinkingComplete} />}
-        {stage === "analysis" && analysis && <AnalysisReveal analysis={analysis} onChoice={onAnalysisChoice} />}
-        {stage === "waiting" && <WaitingForStylist />}
-        {stage === "blueprint" && blueprintData && <Blueprint blueprint={blueprintData.blueprint} />}
-        {stage === "decline" && <DeclinePath />}
 
         <div ref={endRef} />
       </div>
 
-      {showOptions && (
-        <div className="px-6 pb-3 flex flex-wrap gap-2 relative" style={{ zIndex: 1 }}>
-          {currentQ.options.map((opt) => (
-            <button key={opt} onClick={() => handleOption(opt)} style={{ padding: "8px 16px", borderRadius: 20, fontSize: 13, border: "1px solid rgba(199,155,69,0.4)", color: "var(--gold)", background: "transparent", cursor: "pointer" }}>
-              {opt}
-            </button>
-          ))}
+      {/* INPUT */}
+      <div className="px-4 pb-6">
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            background: "var(--surface)",
+            border: "1px solid var(--border-soft)",
+            borderRadius: 28,
+            padding: "6px 8px 6px 16px",
+          }}
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Talk to your stylist..."
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              fontSize: 14,
+              color: "var(--text)",
+              outline: "none",
+            }}
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim()}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: input.trim()
+                ? "var(--gold)"
+                : "var(--surface-2)",
+              border: "none",
+              cursor: input.trim() ? "pointer" : "default",
+            }}
+          >
+            ↑
+          </button>
+        </div>
+      </div>
+
+      {/* STAGES (kept minimal, optional expansion later) */}
+      {stage === "analysis" && analysis && (
+        <div style={{ padding: 20 }}>
+          <div>{analysis.impression}</div>
+
+          <button onClick={() => onChoice("improve")}>
+            Improve my appearance
+          </button>
+          <button onClick={() => onChoice("keep")}>
+            Keep current outfit
+          </button>
         </div>
       )}
 
-      {profileDone && (
-        <div className="px-4 pb-6 relative" style={{ zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 28, padding: "6px 8px 6px 16px" }}>
-            <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Attach">
-              <i className="ti ti-plus" style={{ fontSize: 18 }} />
-            </button>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
-              placeholder="Ask your stylist"
-              style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
-            />
-            <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Voice">
-              <i className="ti ti-microphone" style={{ fontSize: 18 }} />
-            </button>
-            <button
-              onClick={sendFreeText}
-              disabled={!input.trim()}
-              style={{ width: 34, height: 34, borderRadius: "50%", background: input.trim() ? "var(--gold)" : "var(--surface-2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "default", flexShrink: 0 }}
-              aria-label="Send"
-            >
-              <i className="ti ti-arrow-up" style={{ fontSize: 16, color: input.trim() ? "#080808" : "var(--text-dim)" }} />
-            </button>
-          </div>
+      {stage === "decline" && (
+        <div style={{ padding: 20 }}>
+          {DECLINE_TIPS.map((t, i) => (
+            <div key={i}>— {t}</div>
+          ))}
         </div>
       )}
     </div>
