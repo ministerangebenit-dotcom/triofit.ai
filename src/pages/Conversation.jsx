@@ -15,6 +15,7 @@ const GOAL_LABELS = {
   wedding: "the wedding",
   authority: "building authority",
   brand: "your personal brand",
+  School: "looking smart",
 };
 
 const PROCESSING_MESSAGES = [
@@ -64,12 +65,12 @@ function SituationInput({ goal, onSubmit }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 12, lineHeight: 1.7 }}>
-        Tell me about your situation — what's coming up, and what you want people to think of you.
+        Tell me about your situation — what's coming up, which day and time it is and what you want people to think of you.
       </p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="e.g. I have a job interview Thursday at a tech startup. I want to look capable but not overdressed…"
+        placeholder="e.g. I have a job interview this Thursday 8:00am at a tech startup. I want to look competent but not overdressed…"
         rows={4}
         style={{
           width: "100%", background: "var(--surface)", border: "1px solid var(--border-soft)",
@@ -87,7 +88,7 @@ function SituationInput({ goal, onSubmit }) {
           fontWeight: 700, fontSize: 14, cursor: text.trim() ? "pointer" : "default",
         }}
       >
-        Continue →
+        Submit →
       </button>
     </motion.div>
   );
@@ -97,7 +98,7 @@ function ConfirmSummary({ extracted, onConfirm, onEdit }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Here's what I understood
+        Here's what I deduced from your explanation
       </div>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)" }}>{extracted.summary}</p>
@@ -171,7 +172,7 @@ function ProcessingSequence({ onComplete }) {
           <motion.div
             style={{ height: "100%", background: "linear-gradient(90deg, var(--gold-light), var(--gold))" }}
             animate={{ width: `${progress}%` }}
-            transition={{ ease: "linear", duration: 0.2 }}
+            transition={{ ease: "linear", duration: 0.6 }}
           />
         </div>
       </div>
@@ -218,10 +219,10 @@ function PerceptionReveal({ analysis, onChoice }) {
       </div>
       <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>Prediction</div>
       <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
-      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>Let's refine this?</div>
+      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>Should we refine this?</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          Yes, refine it
+          Yes, of course
         </button>
         <button onClick={() => onChoice("no")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
           No, just give me quick advice
@@ -302,7 +303,7 @@ function QuickAdvice({ tips }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, lineHeight: 1.7 }}>
-        Here's how to still shift the impression, without changing the outfit.
+        Here's how to still shift the impression, without changing the outfit. Although your chances will be higher if you made a slight change.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {tips.map((t, i) => (
@@ -356,7 +357,7 @@ export default function Conversation() {
   const sessionId = useRef(genSessionId()).current;
 
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${userName}. I'm your TRIOFIT stylist.` },
+    { role: "consultant", text: `Hello there! ${userName}. I'm your Personal Stylist. Please, be so kind as to call me Trio.` },
   ]);
   const [stage, setStage] = useState("intake");
   const [situation, setSituation] = useState("");
@@ -400,7 +401,7 @@ export default function Conversation() {
     };
   }, [sessionId]);
 
-  function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
+  function pushAssistant(text) { setMessages((m) => [...m, { role: "consultant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
   async function handleSituationSubmit(text) {
@@ -413,7 +414,7 @@ export default function Conversation() {
       setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
       setStage("confirm");
     } catch {
-      pushAssistant("I'm having trouble reading that — mind trying again?");
+      pushAssistant("I'm afraid i couldn't read that — do you mind trying again?");
       setStage("intake");
     }
   }
@@ -433,7 +434,7 @@ export default function Conversation() {
       setAnalysis(res.data);
       setStage("reveal");
     } catch {
-      pushAssistant("I'm having trouble reaching your stylist brain right now.");
+      pushAssistant("Oops! It would seem i am unable to respond right now. You'll be notified once i'm over this.");
       setStage("reveal");
       setAnalysis({ impression: "Trouble connecting.", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
     }
@@ -477,11 +478,11 @@ export default function Conversation() {
     try {
       const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
       if (!res.data.suggestion) {
-        pushAssistant("I don't have a matching outfit template yet — your stylist will add one shortly.");
+        pushAssistant("I don't have a perfect matching outfit template yet — Do you mind waiting a tiny bit? I'll get that ready for you in a sec.");
       }
       setShowChatInput(true);
     } catch {
-      pushAssistant("Having trouble reaching the outfit catalog right now.");
+      pushAssistant("It would seem the outfit catalog is out of my reach right now. Give me a sec, i'll take an alternative route");
       setShowChatInput(true);
     }
   }
@@ -498,7 +499,7 @@ export default function Conversation() {
         messages: [...messages, { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
       })
       .then((res) => pushAssistant(res.data.reply))
-      .catch(() => pushAssistant("Connection issue — is the backend running?"));
+      .catch(() => pushAssistant("Connection issue — don't take this the wrong way, but is your network alright?"));
   }
 
   return (
@@ -525,7 +526,7 @@ export default function Conversation() {
                 {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
                 <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
               </div>
-              {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
+              {m.role === "consultant" && i > 0 && <MessageActions text={m.text} />}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -555,7 +556,7 @@ export default function Conversation() {
         )}
 
         {stage === "refine" && refineQs && <RefineQuestions questions={refineQs} onDone={onRefineDone} />}
-        {stage === "waiting" && <WaitingForStylist />}
+        {stage === "waiting" && <GiveMeaSEC/>}
         {stage === "blueprint" && blueprintData && <Blueprint blueprint={blueprintData.blueprint} />}
         {stage === "quickadvice" && quickTips && <QuickAdvice tips={quickTips} />}
 
@@ -572,7 +573,7 @@ export default function Conversation() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
-              placeholder="Ask your stylist"
+              placeholder="Ask Triofit"
               style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
             />
             <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Voice">
