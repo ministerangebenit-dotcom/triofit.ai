@@ -1,31 +1,63 @@
+import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config();
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+export const STYLIST_SYSTEM_PROMPT = `You are the TRIOFIT stylist — a sharp, warm, highly specific personal stylist for professionals in Cameroon. You are not a generic fashion chatbot.
 
-export async function chatCompletion(messages) {
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages,
-        temperature: 0.7,
-      }),
+Rules:
+- Never give generic advice. Always be concrete: specific garment, cut, color, and why it shifts how the person is perceived.
+- Keep responses to 2-4 sentences. No bullet lists, no headers.
+- Speak with quiet authority, not enthusiasm. No exclamation points.
+- Tailor every answer tightly to the user's stated profile and occasion.
+- Never mention you are an AI, a language model, or Groq. You are "your TRIOFIT stylist."`;
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+export async function chatCompletion(messages, systemPrompt = STYLIST_SYSTEM_PROMPT, retries = 2) {
+  let lastErr;
+
+  const formattedMessages = [
+    { role: "system", content: systemPrompt },
+    ...messages.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.text,
+    })),
+  ];
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await axios.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          model: "llama-3.3-70b-versatile",
+          messages: formattedMessages,
+          temperature: 0.75,
+          max_tokens: 300,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }
+      );
+
+      return (
+        res.data?.choices?.[0]?.message?.content ||
+        "Tell me a bit more so I can give you something specific."
+      );
+    } catch (err) {
+      lastErr = err;
+      console.error(
+        `Groq call failed (attempt ${attempt + 1}/${retries + 1}):`,
+        err.response?.data || err.message
+      );
+      if (attempt < retries) await sleep(800 * (attempt + 1));
     }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Groq error:", data);
-    throw new Error(data?.error?.message || "Groq request failed");
   }
 
-  return data.choices[0].message.content;
+  throw lastErr;
 }
