@@ -1,8 +1,6 @@
-import Groq from "groq-sdk";
+import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config();
-
-export const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export const STYLIST_SYSTEM_PROMPT = `You are the TRIOFIT stylist — a sharp, warm, highly specific personal stylist for professionals in Cameroon. You are not a generic fashion chatbot.
 
@@ -19,26 +17,45 @@ function sleep(ms) {
 
 export async function chatCompletion(messages, systemPrompt = STYLIST_SYSTEM_PROMPT, retries = 2) {
   let lastErr;
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages.map((m) => ({
-            role: m.role === "user" ? "user" : "assistant",
-            content: m.text,
-          })),
-        ],
-        temperature: 0.75,
-        max_tokens: 300,
-      });
-      return completion.choices[0]?.message?.content || "Tell me a bit more so I can give you something specific.";
+      const res = await axios.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages.map((m) => ({
+              role: m.role === "user" ? "user" : "assistant",
+              content: m.text,
+            })),
+          ],
+          temperature: 0.75,
+          max_tokens: 300,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }
+      );
+
+      return (
+        res.data?.choices?.[0]?.message?.content ||
+        "Tell me a bit more so I can give you something specific."
+      );
     } catch (err) {
       lastErr = err;
-      console.error(`Groq call failed (attempt ${attempt + 1}/${retries + 1}):`, err.message);
+      console.error(
+        `Groq call failed (attempt ${attempt + 1}/${retries + 1}):`,
+        err.response?.data || err.message
+      );
       if (attempt < retries) await sleep(800 * (attempt + 1));
     }
   }
+
   throw lastErr;
 }
