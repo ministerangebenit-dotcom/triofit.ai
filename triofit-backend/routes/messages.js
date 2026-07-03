@@ -1,58 +1,24 @@
 import express from "express";
-import { supabase } from "../lib/supabase.js";
 import { chatCompletion } from "../lib/groq.js";
+import { supabase } from "../lib/supabase.js";
 
 const router = express.Router();
 
-/**
- * Save message (user or admin)
- */
-router.post("/messages", async (req, res) => {
-  const { session_id, sender, message, message_type, image_url } = req.body;
-
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      session_id,
-      sender,
-      message,
-      message_type: message_type || "text",
-      image_url,
-    })
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.json(data);
-});
-
-/**
- * Get messages for session
- */
-router.get("/messages/:sessionId", async (req, res) => {
-  const { data, error } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("session_id", req.params.sessionId)
-    .order("created_at", { ascending: true });
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.json(data);
-});
-
-/**
- * CHAT ENDPOINT (MAIN AI FLOW)
- * Frontend should call: /api/chat
- */
-router.post("/chat", async (req, res) => {
+// POST /api/chat
+router.post("/", async (req, res) => {
   try {
-    const { session_id, messages } = req.body;
+    const { session_id, message, profile, goal } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "messages must be an array" });
-    }
+    const messages = [
+      {
+        role: "system",
+        content: `You are a styling assistant. Goal: ${goal}`,
+      },
+      {
+        role: "user",
+        content: message,
+      },
+    ];
 
     const reply = await chatCompletion(messages);
 
@@ -63,10 +29,15 @@ router.post("/chat", async (req, res) => {
       message_type: "text",
     });
 
-    return res.json({ reply });
+    res.json({
+      reply,
+      profile: {
+        ...profile,
+      },
+    });
   } catch (err) {
-    console.error("Chat error:", err);
-    return res.status(500).json({ reply: "Error connecting to AI." });
+    console.error(err);
+    res.status(500).json({ reply: "AI error" });
   }
 });
 
