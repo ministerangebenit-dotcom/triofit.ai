@@ -11,20 +11,24 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://triofit-ai.pages.dev"
-  ],
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://triofit-ai.pages.dev",
+      "https://*.triofit-ai.pages.dev",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
-// IMPORTANT: clean routing structure
-app.use("/api", sessionRoutes);
-app.use("/api", messageRoutes);
-app.use("/api", analysisRoutes);
-app.use("/api", templateRoutes);
+// ✅ CLEAN ROUTES
+app.use("/api/chat", messageRoutes);
+app.use("/api/session", sessionRoutes);
+app.use("/api/analysis", analysisRoutes);
+app.use("/api/templates", templateRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
