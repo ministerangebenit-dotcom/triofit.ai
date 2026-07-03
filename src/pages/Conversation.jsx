@@ -556,7 +556,7 @@ export default function Conversation() {
         )}
 
         {stage === "refine" && refineQs && <RefineQuestions questions={refineQs} onDone={onRefineDone} />}
-        {stage === "waiting" && <GiveMeaSEC/>}
+        {stage === "waiting" && <WaitingForStylist/>}
         {stage === "blueprint" && blueprintData && <Blueprint blueprint={blueprintData.blueprint} />}
         {stage === "quickadvice" && quickTips && <QuickAdvice tips={quickTips} />}
 
