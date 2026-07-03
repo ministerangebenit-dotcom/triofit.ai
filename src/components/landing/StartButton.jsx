@@ -22,7 +22,7 @@ export default function StartButton({ onClick }) {
       transition-all
       "
     >
-      Start Conversation →
+      Let's make a deal →
     </motion.button>
   );
 }
