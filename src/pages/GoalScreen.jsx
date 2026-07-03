@@ -9,6 +9,7 @@ const GOALS = [
   { key: "wedding", label: "A wedding", icon: "ti-flower" },
   { key: "authority", label: "Build authority", icon: "ti-shield-check" },
   { key: "brand", label: "Personal branding", icon: "ti-user-star" },
+  { key: "School", label: "Look Smart in School", icon: "ti-book" },
 ];
 
 export default function GoalScreen() {
