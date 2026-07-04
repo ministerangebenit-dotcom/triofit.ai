@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-
-const GOALS = [
-  { key: "job", label: "Get a job", icon: "ti-briefcase" },
-  { key: "date", label: "Impress on a date", icon: "ti-heart" },
-  { key: "wealth", label: "Look wealthier", icon: "ti-diamond" },
-  { key: "wedding", label: "A wedding", icon: "ti-flower" },
-  { key: "authority", label: "Build authority", icon: "ti-shield-check" },
-  { key: "brand", label: "Personal branding", icon: "ti-user-star" },
-  { key: "School", label: "Look Smart in School", icon: "ti-book" },
-];
+import LangToggle from "../components/shared/LangToggle";
+import { useLang, t } from "../lib/i18n";
 
 export default function GoalScreen() {
   const [selected, setSelected] = useState(null);
+  const [lang, setLangState] = useState(useLang());
+  const s = t(lang);
   const navigate = useNavigate();
   const userName = localStorage.getItem("tf_name") || "there";
+
+  const GOALS = [
+    { key: "job", label: s.goalJob, icon: "ti-briefcase" },
+    { key: "date", label: s.goalDate, icon: "ti-heart" },
+    { key: "wealth", label: s.goalWealth, icon: "ti-diamond" },
+    { key: "wedding", label: s.goalWedding, icon: "ti-flower" },
+    { key: "authority", label: s.goalAuthority, icon: "ti-shield-check" },
+    { key: "brand", label: s.goalBrand, icon: "ti-user-star" },
+  ];
 
   function proceed(goalKey) {
     setSelected(goalKey);
@@ -25,19 +28,16 @@ export default function GoalScreen() {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center px-8" style={{ background: "var(--bg)" }}>
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ width: "100%", maxWidth: 380 }}
-      >
+      <LangToggle lang={lang} onChange={setLangState} />
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, textAlign: "center" }}>
           {userName}
         </div>
         <h1 className="font-display" style={{ fontSize: 24, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>
-          Why are you here today?
+          {s.goalTitle}
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 28, textAlign: "center", lineHeight: 1.6 }}>
-          This shapes everything I recommend.
+          {s.goalSub}
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
