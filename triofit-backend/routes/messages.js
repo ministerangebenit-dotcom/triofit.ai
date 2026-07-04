@@ -16,6 +16,22 @@ router.post("/messages", async (req, res) => {
   res.json(data);
 });
 
+router.get("/history/:sessionId", async (req, res) => {
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("session_id", req.params.sessionId)
+    .single();
+
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("session_id", req.params.sessionId)
+    .order("created_at", { ascending: true });
+
+  res.json({ session: session || null, messages: messages || [] });
+});
+
 router.get("/messages/:sessionId", async (req, res) => {
   const { data, error } = await supabase
     .from("messages")
