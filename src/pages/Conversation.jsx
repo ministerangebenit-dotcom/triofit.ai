@@ -1,56 +1,45 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { FanSpinner, BoomerangSpinner } from "../components/chat/FanSpinner";
+import LogoOrb from "../components/shared/LogoOrb";
 import ChatBackground from "../components/chat/ChatBackground";
 import ThemeToggle from "../components/shared/ThemeToggle";
+import LangToggle from "../components/shared/LangToggle";
 import { sb } from "../lib/supabase";
+import { useLang, t } from "../lib/i18n";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001/api";
 
-const GOAL_LABELS = {
-  job: "getting the job",
-  date: "the date",
-  wealth: "looking wealthier",
-  wedding: "the wedding",
-  authority: "building authority",
-  brand: "your personal brand",
-  School: "looking smart",
+const BLUEPRINT_KEYS = ["confidence", "authority", "trust", "approachability", "styleFit"];
+const BLUEPRINT_COLORS = {
+  confidence: "#C79B45",
+  authority: "#D85A30",
+  trust: "#7F77DD",
+  approachability: "#5DCAA5",
+  styleFit: "#D9AE5A",
 };
 
-const PROCESSING_MESSAGES = [
-  "Analyzing communication style…",
-  "Evaluating social perception signals…",
-  "Mapping psychological impression profile…",
-  "Comparing against your stated goal…",
-  "Weighing tone against context…",
-  "Looking for inconsistencies…",
-  "Predicting social outcome…",
-  "Finalizing your perception profile…",
-];
-
-const BLUEPRINT_DIMENSIONS = [
-  { key: "confidence", label: "Confidence", color: "#C79B45" },
-  { key: "authority", label: "Authority", color: "#D85A30" },
-  { key: "trust", label: "Trustworthiness", color: "#7F77DD" },
-  { key: "approachability", label: "Approachability", color: "#5DCAA5" },
-  { key: "styleFit", label: "Style fit", color: "#D9AE5A" },
-];
-
-function RadarBars({ values, dims }) {
+function RadarBars({ values, s }) {
+  const labelMap = {
+    confidence: s.traitConfidence,
+    authority: s.traitAuthority,
+    trust: s.traitTrust,
+    approachability: s.traitApproachability,
+    styleFit: s.traitStyleFit,
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {dims.map((t) => (
-        <div key={t.key}>
+      {BLUEPRINT_KEYS.map((key) => (
+        <div key={key}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-dim)", marginBottom: 4 }}>
-            <span>{t.label}</span>
-            <span style={{ color: values[t.key] ? t.color : "var(--muted)" }}>{values[t.key] ?? 0}%</span>
+            <span>{labelMap[key]}</span>
+            <span style={{ color: values[key] ? BLUEPRINT_COLORS[key] : "var(--muted)" }}>{values[key] ?? 0}%</span>
           </div>
           <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 2, overflow: "hidden" }}>
             <motion.div
-              style={{ height: "100%", background: t.color }}
+              style={{ height: "100%", background: BLUEPRINT_COLORS[key] }}
               initial={{ width: "0%" }}
-              animate={{ width: `${values[t.key] ?? 0}%` }}
+              animate={{ width: `${values[key] ?? 0}%` }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
@@ -60,17 +49,15 @@ function RadarBars({ values, dims }) {
   );
 }
 
-function SituationInput({ goal, onSubmit }) {
+function SituationInput({ s, onSubmit }) {
   const [text, setText] = useState("");
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 12, lineHeight: 1.7 }}>
-        Tell me about your situation — what's coming up, which day and time it is and what you want people to think of you.
-      </p>
+      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 12, lineHeight: 1.7 }}>{s.situationPrompt}</p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="e.g. I have a job interview this Thursday 8:00am at a tech startup. I want to look competent but not overdressed…"
+        placeholder={s.situationPlaceholder}
         rows={4}
         style={{
           width: "100%", background: "var(--surface)", border: "1px solid var(--border-soft)",
@@ -88,48 +75,43 @@ function SituationInput({ goal, onSubmit }) {
           fontWeight: 700, fontSize: 14, cursor: text.trim() ? "pointer" : "default",
         }}
       >
-        Submit →
+        {s.situationContinue}
       </button>
     </motion.div>
   );
 }
 
-function ConfirmSummary({ extracted, onConfirm, onEdit }) {
+function ConfirmSummary({ s, extracted, onConfirm, onEdit }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Here's what I deduced from your explanation
+        {s.confirmTitle}
       </div>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)" }}>{extracted.summary}</p>
       </div>
       <div style={{ display: "flex", gap: 10 }}>
-        <button
-          onClick={onConfirm}
-          style={{ flex: 1, padding: "12px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
-        >
-          That's right
+        <button onClick={onConfirm} style={{ flex: 1, padding: "12px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {s.confirmYes}
         </button>
-        <button
-          onClick={onEdit}
-          style={{ flex: 1, padding: "12px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}
-        >
-          Let me rephrase
+        <button onClick={onEdit} style={{ flex: 1, padding: "12px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
+          {s.confirmEdit}
         </button>
       </div>
     </motion.div>
   );
 }
 
-function ProcessingSequence({ onComplete }) {
+function ProcessingSequence({ s, onComplete }) {
   const [progress, setProgress] = useState(0);
   const [visibleIndex, setVisibleIndex] = useState(-1);
   const [doneIndexes, setDoneIndexes] = useState([]);
+  const messages = s.processingMessages;
 
   useEffect(() => {
     let cancelled = false;
     const totalMs = 60000;
-    const stepMs = totalMs / PROCESSING_MESSAGES.length;
+    const stepMs = totalMs / messages.length;
 
     async function run() {
       const start = Date.now();
@@ -140,7 +122,7 @@ function ProcessingSequence({ onComplete }) {
         if (pct >= 100) clearInterval(progressTimer);
       }, 200);
 
-      for (let i = 0; i < PROCESSING_MESSAGES.length; i++) {
+      for (let i = 0; i < messages.length; i++) {
         if (cancelled) { clearInterval(progressTimer); return; }
         setVisibleIndex(i);
         await new Promise((r) => setTimeout(r, stepMs * 0.75));
@@ -161,23 +143,23 @@ function ProcessingSequence({ onComplete }) {
   return (
     <div style={{ padding: "28px 0" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-        <FanSpinner size={72} speed={0.6} />
+        <LogoOrb size={72} thinking={true} />
       </div>
       <div style={{ maxWidth: 340, margin: "0 auto 28px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-dim)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-          <span>Building your perception profile</span>
+          <span>{s.processingTitle}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <div style={{ height: 5, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
           <motion.div
             style={{ height: "100%", background: "linear-gradient(90deg, var(--gold-light), var(--gold))" }}
             animate={{ width: `${progress}%` }}
-            transition={{ ease: "linear", duration: 0.6 }}
+            transition={{ ease: "linear", duration: 0.2 }}
           />
         </div>
       </div>
       <div style={{ maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, minHeight: 200 }}>
-        {PROCESSING_MESSAGES.map((m, i) => {
+        {messages.map((m, i) => {
           if (i > visibleIndex) return null;
           const isDone = doneIndexes.includes(i);
           return (
@@ -188,7 +170,7 @@ function ProcessingSequence({ onComplete }) {
               transition={{ duration: 0.4 }}
               style={{ fontSize: 14, color: isDone ? "var(--text-dim)" : "var(--text)", display: "flex", alignItems: "center", gap: 10 }}
             >
-              {isDone ? <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0 }} /> : <BoomerangSpinner size={15} />}
+              {isDone ? <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0 }} /> : <LogoOrb size={16} thinking={true} />}
               {m}
             </motion.div>
           );
@@ -198,15 +180,15 @@ function ProcessingSequence({ onComplete }) {
   );
 }
 
-function PerceptionReveal({ analysis, onChoice }) {
+function PerceptionReveal({ s, analysis, onChoice }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Impression
+        {s.revealImpression}
       </div>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", marginBottom: 12 }}>{analysis.impression}</p>
-        <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>Reasons</div>
+        <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealReasons}</div>
         {analysis.reasons.map((r, i) => (
           <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 4, display: "flex", gap: 6 }}>
             <span style={{ color: "var(--gold)" }}>—</span>{r}
@@ -214,18 +196,18 @@ function PerceptionReveal({ analysis, onChoice }) {
         ))}
       </div>
       <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <div>{analysis.traits.strong.map((t) => <span key={t} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {t}</span>)}</div>
-        <div>{analysis.traits.caution.map((t) => <span key={t} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {t}</span>)}</div>
+        <div>{analysis.traits.strong.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {tr}</span>)}</div>
+        <div>{analysis.traits.caution.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {tr}</span>)}</div>
       </div>
-      <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>Prediction</div>
+      <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealPrediction}</div>
       <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
-      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>Should we refine this?</div>
+      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>{s.revealCta}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          Yes, of course
+          {s.revealYes}
         </button>
         <button onClick={() => onChoice("no")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
-          No, just give me quick advice
+          {s.revealNo}
         </button>
       </div>
     </motion.div>
@@ -261,26 +243,26 @@ function RefineQuestions({ questions, onDone }) {
   );
 }
 
-function WaitingForStylist() {
+function WaitingForStylist({ s }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: "center", padding: "24px 0" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-        <BoomerangSpinner size={28} />
+        <LogoOrb size={40} thinking={true} />
       </div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)" }}>Your stylist is hand-picking your outfit now…</p>
+      <p style={{ fontSize: 13, color: "var(--text-dim)" }}>{s.waitingForStylist}</p>
     </motion.div>
   );
 }
 
-function Blueprint({ blueprint }) {
+function Blueprint({ s, blueprint }) {
   const [values, setValues] = useState({});
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      for (const d of BLUEPRINT_DIMENSIONS) {
+      for (const key of BLUEPRINT_KEYS) {
         await new Promise((r) => setTimeout(r, 300));
         if (cancelled) return;
-        setValues((v) => ({ ...v, [d.key]: blueprint[d.key] }));
+        setValues((v) => ({ ...v, [key]: blueprint[key] }));
       }
     }
     run();
@@ -290,25 +272,23 @@ function Blueprint({ blueprint }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        Perception blueprint
+        {s.perceptionBlueprint}
       </div>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16 }}>
-        <RadarBars values={values} dims={BLUEPRINT_DIMENSIONS} />
+        <RadarBars values={values} s={s} />
       </div>
     </motion.div>
   );
 }
 
-function QuickAdvice({ tips }) {
+function QuickAdvice({ s, tips }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, lineHeight: 1.7 }}>
-        Here's how to still shift the impression, without changing the outfit. Although your chances will be higher if you made a slight change.
-      </p>
+      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, lineHeight: 1.7 }}>{s.quickAdviceIntro}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {tips.map((t, i) => (
+        {tips.map((tip, i) => (
           <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", display: "flex", gap: 8 }}>
-            <span style={{ color: "var(--gold)" }}>—</span>{t}
+            <span style={{ color: "var(--gold)" }}>—</span>{tip}
           </div>
         ))}
       </div>
@@ -355,9 +335,11 @@ export default function Conversation() {
   const userName = localStorage.getItem("tf_name") || "there";
   const goal = localStorage.getItem("tf_goal") || "authority";
   const sessionId = useRef(genSessionId()).current;
+  const [lang, setLangState] = useState(useLang());
+  const s = t(lang);
 
   const [messages, setMessages] = useState([
-    { role: "consultant", text: `Hello there! ${userName}. I'm your Personal Stylist. Please, be so kind as to call me Trio.` },
+    { role: "assistant", text: s.greeting(userName) },
   ]);
   const [stage, setStage] = useState("intake");
   const [situation, setSituation] = useState("");
@@ -372,6 +354,27 @@ export default function Conversation() {
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
+
+  useEffect(() => {
+    axios.get(`${BACKEND}/history/${sessionId}`).then((res) => {
+      if (res.data.session && res.data.messages.length > 0) {
+        const restored = res.data.messages.map((m) => ({
+          role: m.sender === "user" ? "user" : "assistant",
+          text: m.message,
+          image: m.image_url || undefined,
+        }));
+        setMessages(restored);
+        setProfile({
+          gender: res.data.session.gender,
+          age: res.data.session.age,
+          style: res.data.session.style,
+          occasion: res.data.session.occasion,
+        });
+        setStage("blueprint");
+        setShowChatInput(true);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const chatChannel = sb
@@ -401,7 +404,7 @@ export default function Conversation() {
     };
   }, [sessionId]);
 
-  function pushAssistant(text) { setMessages((m) => [...m, { role: "consultant", text }]); }
+  function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
   async function handleSituationSubmit(text) {
@@ -414,7 +417,7 @@ export default function Conversation() {
       setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
       setStage("confirm");
     } catch {
-      pushAssistant("I'm afraid i couldn't read that — do you mind trying again?");
+      pushAssistant(s.extractTrouble);
       setStage("intake");
     }
   }
@@ -434,9 +437,9 @@ export default function Conversation() {
       setAnalysis(res.data);
       setStage("reveal");
     } catch {
-      pushAssistant("Oops! It would seem i am unable to respond right now. You'll be notified once i'm over this.");
+      pushAssistant(s.stylistBrainTrouble);
       setStage("reveal");
-      setAnalysis({ impression: "Trouble connecting.", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
+      setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
     }
   }
 
@@ -449,7 +452,7 @@ export default function Conversation() {
         setStage("quickadvice");
         setShowChatInput(true);
       } catch {
-        setQuickTips(["Arrive early.", "Keep it simple.", "Make eye contact."]);
+        setQuickTips([]);
         setStage("quickadvice");
         setShowChatInput(true);
       }
@@ -478,11 +481,11 @@ export default function Conversation() {
     try {
       const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
       if (!res.data.suggestion) {
-        pushAssistant("I don't have a perfect matching outfit template yet — Do you mind waiting a tiny bit? I'll get that ready for you in a sec.");
+        pushAssistant(s.noTemplateYet);
       }
       setShowChatInput(true);
     } catch {
-      pushAssistant("It would seem the outfit catalog is out of my reach right now. Give me a sec, i'll take an alternative route");
+      pushAssistant(s.catalogTrouble);
       setShowChatInput(true);
     }
   }
@@ -499,12 +502,13 @@ export default function Conversation() {
         messages: [...messages, { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
       })
       .then((res) => pushAssistant(res.data.reply))
-      .catch(() => pushAssistant("Connection issue — don't take this the wrong way, but is your network alright?"));
+      .catch(() => pushAssistant(s.connectionIssue));
   }
 
   return (
     <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
       <ThemeToggle />
+      <LangToggle lang={lang} onChange={setLangState} />
       <ChatBackground />
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
         <AnimatePresence>
@@ -526,39 +530,39 @@ export default function Conversation() {
                 {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
                 <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
               </div>
-              {m.role === "consultant" && i > 0 && <MessageActions text={m.text} />}
+              {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {stage === "intake" && <SituationInput goal={goal} onSubmit={handleSituationSubmit} />}
+        {stage === "intake" && <SituationInput s={s} onSubmit={handleSituationSubmit} />}
 
         {stage === "extracting" && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <BoomerangSpinner size={20} />
-              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>reading between the lines…</span>
+              <LogoOrb size={20} thinking={true} />
+              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.readingBetweenLines}</span>
             </div>
           </div>
         )}
 
-        {stage === "confirm" && extracted && <ConfirmSummary extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
-        {stage === "processing" && <ProcessingSequence onComplete={onProcessingComplete} />}
-        {stage === "reveal" && analysis && <PerceptionReveal analysis={analysis} onChoice={onRevealChoice} />}
+        {stage === "confirm" && extracted && <ConfirmSummary s={s} extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
+        {stage === "processing" && <ProcessingSequence s={s} onComplete={onProcessingComplete} />}
+        {stage === "reveal" && analysis && <PerceptionReveal s={s} analysis={analysis} onChoice={onRevealChoice} />}
 
         {(stage === "refine-loading" || stage === "quickadvice-loading") && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <BoomerangSpinner size={20} />
-              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>thinking…</span>
+              <LogoOrb size={20} thinking={true} />
+              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.thinking}</span>
             </div>
           </div>
         )}
 
         {stage === "refine" && refineQs && <RefineQuestions questions={refineQs} onDone={onRefineDone} />}
-        {stage === "waiting" && <WaitingForStylist/>}
-        {stage === "blueprint" && blueprintData && <Blueprint blueprint={blueprintData.blueprint} />}
-        {stage === "quickadvice" && quickTips && <QuickAdvice tips={quickTips} />}
+        {stage === "waiting" && <WaitingForStylist s={s} />}
+        {stage === "blueprint" && blueprintData && <Blueprint s={s} blueprint={blueprintData.blueprint} />}
+        {stage === "quickadvice" && quickTips && <QuickAdvice s={s} tips={quickTips} />}
 
         <div ref={endRef} />
       </div>
@@ -573,7 +577,7 @@ export default function Conversation() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
-              placeholder="Ask Triofit"
+              placeholder={s.chatPlaceholder}
               style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
             />
             <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Voice">
