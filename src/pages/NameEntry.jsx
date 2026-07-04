@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import LangToggle from "../components/shared/LangToggle";
+import { useLang, t } from "../lib/i18n";
 
 export default function NameEntry() {
   const [name, setName] = useState("");
+  const [lang, setLangState] = useState(useLang());
+  const s = t(lang);
   const navigate = useNavigate();
 
   function submit() {
@@ -14,29 +18,23 @@ export default function NameEntry() {
   }
 
   return (
-    <div
-      className="h-screen flex flex-col items-center justify-center px-8"
-      style={{ background: "var(--bg)" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ width: "100%", maxWidth: 340 }}
-      >
+    <div className="h-screen flex flex-col items-center justify-center px-8" style={{ background: "var(--bg)" }}>
+      <LangToggle lang={lang} onChange={setLangState} />
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: 340 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8 }}>
-          Welcome
+          {s.nsLabel}
         </div>
         <h1 className="font-display" style={{ fontSize: 26, color: "var(--text)", marginBottom: 8 }}>
-         If we're going to do this, i'll need to know your name. 
+          {s.nsTitle}
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-dim)", marginBottom: 28, lineHeight: 1.6 }}>
-          Your personal stylist is ready.
+          {s.nsSub}
         </p>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="Your first name"
+          placeholder={s.nsPlaceholder}
           autoFocus
           style={{
             width: "100%", padding: "14px 18px", background: "var(--surface-2)",
@@ -56,7 +54,7 @@ export default function NameEntry() {
             cursor: name.trim().length < 2 ? "default" : "pointer",
           }}
         >
-          Proceed
+          {s.nsContinue}
         </button>
       </motion.div>
     </div>
