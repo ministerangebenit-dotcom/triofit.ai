@@ -4,11 +4,11 @@ import { supabase } from "../lib/supabase.js";
 const router = express.Router();
 
 router.post("/session", async (req, res) => {
-  const { session_id, name, gender, age, style, occasion, goal } = req.body;
+  const { session_id, name, gender, age, style, occasion, goal, situation } = req.body;
   const { data, error } = await supabase
     .from("sessions")
     .upsert(
-      { session_id, name, gender, age, style, occasion, goal, updated_at: new Date().toISOString() },
+      { session_id, name, gender, age, style, occasion, goal, situation, updated_at: new Date().toISOString() },
       { onConflict: "session_id" }
     )
     .select()
