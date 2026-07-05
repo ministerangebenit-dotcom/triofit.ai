@@ -6,6 +6,7 @@ import sessionRoutes from "./routes/session.js";
 import messageRoutes from "./routes/messages.js";
 import analysisRoutes from "./routes/analysis.js";
 import templateRoutes from "./routes/templates.js";
+import analyticsRoutes from "./routes/analytics.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api", sessionRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", analysisRoutes);
 app.use("/api", templateRoutes);
+app.use("/api", analyticsRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
