@@ -13,12 +13,20 @@ router.post("/extract", async (req, res) => {
 
 "${situation}"
 
-Extract the following as best you can infer. If something genuinely cannot be inferred, write "unclear".
+Extract the following as best you can infer. If gender genuinely cannot be inferred from what they wrote, write "unclear" for gender only — but you MUST pick the closest matching OCCASION from the fixed list below, never invent your own phrase.
+
+OCCASION must be exactly one of these five, verbatim:
+- A professional interview
+- An evening out
+- A wedding
+- Everyday office wear
+- A casual event
+
 GENDER: [Male/Female/unclear]
 AGE_RANGE: [18-24/25-34/35-44/45+/unclear]
 STYLE: [one short phrase describing their natural style, e.g. "Classic & elegant"]
-OCCASION: [the specific event/setting they described, in a few words]
-SUMMARY: [one sentence restating their situation back to them, in second person, e.g. "You're preparing for a job interview and want to come across as capable but approachable."]`;
+OCCASION: [must exactly match one of the five options above]
+SUMMARY: [one sentence restating their situation back to them, in second person]`;
 
     const raw = await chatCompletion([{ role: "user", text: prompt }]);
 
