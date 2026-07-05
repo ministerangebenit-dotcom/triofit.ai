@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/png" href="/logo.png" />
-<link rel="apple-touch-icon" href="/logo.png" />
 <meta charset="UTF-8">
 <title>TRIOFIT Admin</title>
 <style>
@@ -35,6 +33,20 @@
   .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
   .tabs button { background: transparent; border: 1px solid #333; color: #999; }
   .tabs button.active { background: #C79B45; color: #080808; border: none; }
+  .cards-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-card { background: #1f1e23; border: 1px solid #2a292e; border-radius: 12px; padding: 16px 20px; min-width: 140px; }
+  .stat-card .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .stat-card .value { font-size: 26px; font-weight: 700; color: #C79B45; }
+  .breakdown { background: #1f1e23; border: 1px solid #2a292e; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .breakdown h3 { font-size: 13px; color: #ccc; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .bar-label { width: 140px; color: #ccc; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: #17161a; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #C79B45; }
+  .bar-count { width: 30px; text-align: right; color: #888; }
+  .session-row { background: #1f1e23; border: 1px solid #2a292e; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; }
+  .session-row .sit { color: #ccc; margin-top: 6px; line-height: 1.5; }
+  .session-row .meta { color: #888; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -45,6 +57,7 @@
 <div class="tabs">
   <button id="tabQueue" class="active" onclick="showTab('queue')">Image queue</button>
   <button id="tabTemplates" onclick="showTab('templates')">Add template</button>
+  <button id="tabAnalytics" onclick="showTab('analytics')">Analytics</button>
 </div>
 
 <div id="queueView">
@@ -83,6 +96,26 @@
   </div>
 </div>
 
+<div id="analyticsView" style="display:none;">
+  <div class="cards-row" id="statCards"></div>
+  <div class="breakdown">
+    <h3>Goals</h3>
+    <div id="goalBreakdown"></div>
+  </div>
+  <div class="breakdown">
+    <h3>Occasions</h3>
+    <div id="occasionBreakdown"></div>
+  </div>
+  <div class="breakdown">
+    <h3>Styles</h3>
+    <div id="styleBreakdown"></div>
+  </div>
+  <div class="breakdown">
+    <h3>Recent user situations</h3>
+    <div id="sessionsList" class="empty">Loading…</div>
+  </div>
+</div>
+
 <script>
 const API = "http://localhost:3001/api";
 let allTemplatesCache = [];
@@ -90,9 +123,12 @@ let allTemplatesCache = [];
 function showTab(tab) {
   document.getElementById('queueView').style.display = tab === 'queue' ? 'block' : 'none';
   document.getElementById('templatesView').style.display = tab === 'templates' ? 'block' : 'none';
+  document.getElementById('analyticsView').style.display = tab === 'analytics' ? 'block' : 'none';
   document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
   document.getElementById('tabTemplates').classList.toggle('active', tab === 'templates');
+  document.getElementById('tabAnalytics').classList.toggle('active', tab === 'analytics');
   if (tab === 'queue') loadQueue();
+  if (tab === 'analytics') loadAnalytics();
 }
 
 function confidenceClass(c) {
@@ -123,7 +159,7 @@ async function loadQueue() {
     return;
   }
 
-  const { data: allTemplates } = await fetch(`${API}/templates`).then(r => r.json()).then(d => ({data: d})).catch(() => ({data: []}));
+  const allTemplates = await fetch(`${API}/templates`).then(r => r.json()).catch(() => []);
   allTemplatesCache = allTemplates || [];
 
   list.className = '';
@@ -200,6 +236,58 @@ async function addTemplate() {
   alert('Template saved.');
   document.getElementById('t-desc').value = '';
   document.getElementById('t-image').value = '';
+}
+
+function renderBreakdown(containerId, counts, total) {
+  const container = document.getElementById(containerId);
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) { container.innerHTML = '<div class="empty">No data yet.</div>'; return; }
+  container.innerHTML = entries.map(([label, count]) => {
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-count">${count}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadAnalytics() {
+  const res = await fetch(`${API}/analytics/overview`);
+  const data = await res.json();
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="label">Sessions started</div><div class="value">${data.funnel.totalSessionsStarted}</div></div>
+    <div class="stat-card"><div class="label">Reached analysis</div><div class="value">${data.funnel.sessionsThatReachedAnalysis}</div></div>
+    <div class="stat-card"><div class="label">Outfits sent</div><div class="value">${data.funnel.outfitsSent}</div></div>
+    <div class="stat-card"><div class="label">Currently pending</div><div class="value">${data.funnel.currentlyPending}</div></div>
+    <div class="stat-card"><div class="label">AI accuracy</div><div class="value">${data.aiAccuracy !== null ? data.aiAccuracy + '%' : '—'}</div></div>
+  `;
+
+  renderBreakdown('goalBreakdown', data.goalCounts, data.totalSessions);
+  renderBreakdown('occasionBreakdown', data.occasionCounts, data.totalSessions);
+  renderBreakdown('styleBreakdown', data.styleCounts, data.totalSessions);
+
+  const sessRes = await fetch(`${API}/analytics/sessions`);
+  const sessions = await sessRes.json();
+  const list = document.getElementById('sessionsList');
+
+  const withSituation = sessions.filter(s => s.situation);
+  if (!withSituation.length) {
+    list.className = 'empty';
+    list.innerHTML = 'No situation text recorded yet.';
+    return;
+  }
+
+  list.className = '';
+  list.innerHTML = withSituation.map(s => `
+    <div class="session-row">
+      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleDateString()}</div>
+      <div class="sit">"${s.situation}"</div>
+    </div>
+  `).join('');
 }
 
 loadQueue();
