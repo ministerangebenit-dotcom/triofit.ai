@@ -478,17 +478,17 @@ export default function Conversation() {
   }
 
   async function triggerSuggestion(finalProfile) {
-    try {
-      const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
-      if (!res.data.suggestion) {
-        pushAssistant(s.noTemplateYet);
-      }
-      setShowChatInput(true);
-    } catch {
-      pushAssistant(s.catalogTrouble);
-      setShowChatInput(true);
+  try {
+    const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
+    if (!res.data.suggestion) {
+      pushAssistant(s.noTemplateYet);
     }
+    setShowChatInput(true);
+  } catch {
+    pushAssistant(s.catalogTrouble);
+    setShowChatInput(true);
   }
+}
 
   function sendFreeText() {
     if (!input.trim()) return;
