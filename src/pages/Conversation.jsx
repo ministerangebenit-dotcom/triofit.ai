@@ -427,9 +427,9 @@ export default function Conversation() {
   }
 
   async function handleConfirm() {
-    await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, ...profile });
-    setStage("processing");
-  }
+  await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, situation, ...profile });
+  setStage("processing");
+}
 
   async function onProcessingComplete() {
     try {
