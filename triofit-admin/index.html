@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <meta charset="UTF-8">
 <title>TRIOFIT Admin</title>
 <style>
@@ -198,30 +199,32 @@
 <div id="analyticsView" style="display:none;">
   <div class="breakdown">
     <h3>Conversion funnel</h3>
-    <div id="funnelView"></div>
+    <canvas id="funnelChart" height="90"></canvas>
   </div>
   <div class="breakdown">
     <h3>Usage by hour of day</h3>
-    <div id="hourBreakdown"></div>
+    <canvas id="hourChart" height="90"></canvas>
   </div>
-  <div class="breakdown">
-    <h3>Goals</h3>
-    <div id="goalBreakdown"></div>
-  </div>
-  <div class="breakdown">
-    <h3>Occasions</h3>
-    <div id="occasionBreakdown"></div>
+  <div class="row" style="gap: 16px; align-items: flex-start;">
+    <div class="breakdown" style="flex: 1;">
+      <h3>Goals</h3>
+      <canvas id="goalChart" height="180"></canvas>
+    </div>
+    <div class="breakdown" style="flex: 1;">
+      <h3>Occasions</h3>
+      <canvas id="occasionChart" height="180"></canvas>
+    </div>
   </div>
   <div class="breakdown">
     <h3>Styles</h3>
-    <div id="styleBreakdown"></div>
+    <canvas id="styleChart" height="100"></canvas>
   </div>
   <div class="breakdown">
     <h3>Recent sessions — click to view full conversation</h3>
     <div id="sessionsList" class="empty">Loading…</div>
   </div>
 </div>
-
+ 
 <div class="modal-overlay" id="convoModal">
   <div class="modal-box">
     <div class="modal-header">
