@@ -406,46 +406,102 @@ async function addTemplate() {
   document.getElementById('t-image').value = '';
 }
 
-function renderBreakdown(containerId, counts, total) {
-  const container = document.getElementById(containerId);
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) { container.innerHTML = '<div class="empty">No data yet.</div>'; return; }
-  container.innerHTML = entries.map(([label, count]) => {
-    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-    return `
-      <div class="bar-row">
-        <div class="bar-label">${label}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-        <div class="bar-count">${count}</div>
-      </div>
-    `;
-  }).join('');
+let chartInstances = {};
+
+function destroyChart(id) {
+  if (chartInstances[id]) {
+    chartInstances[id].destroy();
+    delete chartInstances[id];
+  }
 }
 
-function renderFunnel(funnel) {
-  const steps = [
-    { label: 'Sessions started', value: funnel.totalSessionsStarted },
-    { label: 'Reached analysis', value: funnel.sessionsThatReachedAnalysis },
-    { label: 'Outfits sent', value: funnel.outfitsSent },
-  ];
-  const max = Math.max(...steps.map(s => s.value), 1);
-  document.getElementById('funnelView').innerHTML = steps.map(s => `
-    <div class="funnel-step">
-      <div class="funnel-label">${s.label}</div>
-      <div class="funnel-bar" style="width:${Math.max((s.value / max) * 100, 8)}%">${s.value}</div>
-    </div>
-  `).join('');
+const GOLD = '#C79B45';
+const GOLD_LIGHT = '#D9AE5A';
+const CHART_COLORS = ['#C79B45', '#D9AE5A', '#7F77DD', '#5DCAA5', '#D85A30', '#E9C275', '#8d6523'];
+
+function renderBarChart(canvasId, counts) {
+  destroyChart(canvasId);
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: entries.map(([label]) => label),
+      datasets: [{
+        data: entries.map(([, count]) => count),
+        backgroundColor: GOLD,
+        borderRadius: 6,
+        maxBarThickness: 36,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#999', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#999', font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+function renderPieChart(canvasId, counts) {
+  destroyChart(canvasId);
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(([label]) => label),
+      datasets: [{
+        data: entries.map(([, count]) => count),
+        backgroundColor: CHART_COLORS,
+        borderColor: '#151417',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#ccc', font: { size: 11 }, padding: 12 } }
+      }
+    }
+  });
+}
+
+function renderFunnelChart(funnel) {
+  destroyChart('funnelChart');
+  const labels = ['Sessions started', 'Reached analysis', 'Outfits sent'];
+  const values = [funnel.totalSessionsStarted, funnel.sessionsThatReachedAnalysis, funnel.outfitsSent];
+  const ctx = document.getElementById('funnelChart').getContext('2d');
+  chartInstances['funnelChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: [GOLD, GOLD_LIGHT, '#5DCAA5'],
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#999', font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#ccc', font: { size: 12 } }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 async function loadAnalytics() {
   const res = await fetch(`${API}/analytics/overview`);
   const data = await res.json();
 
-  renderFunnel(data.funnel);
-  renderBreakdown('hourBreakdown', data.hourCounts, data.totalSessions);
-  renderBreakdown('goalBreakdown', data.goalCounts, data.totalSessions);
-  renderBreakdown('occasionBreakdown', data.occasionCounts, data.totalSessions);
-  renderBreakdown('styleBreakdown', data.styleCounts, data.totalSessions);
+  renderFunnelChart(data.funnel);
+  renderBarChart('hourChart', data.hourCounts);
+  renderPieChart('goalChart', data.goalCounts);
+  renderPieChart('occasionChart', data.occasionCounts);
+  renderBarChart('styleChart', data.styleCounts);
 
   const sessRes = await fetch(`${API}/analytics/sessions`);
   const sessions = await sessRes.json();
@@ -456,6 +512,16 @@ async function loadAnalytics() {
     list.innerHTML = 'No sessions recorded yet.';
     return;
   }
+
+  list.className = '';
+  list.innerHTML = sessions.map(s => `
+    <div class="session-row" onclick="viewConversation('${s.session_id}')">
+      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleString()}</div>
+      ${s.situation ? `<div class="sit">"${s.situation}"</div>` : '<div class="sit">No situation text recorded.</div>'}
+      <div class="view-link">View full conversation →</div>
+    </div>
+  `).join('');
+}
 
   list.className = '';
   list.innerHTML = sessions.map(s => `
