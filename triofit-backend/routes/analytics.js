@@ -7,8 +7,11 @@ router.get("/analytics/overview", async (req, res) => {
   const { data: sessions, error: sErr } = await supabase.from("sessions").select("*");
   const { data: corrections, error: cErr } = await supabase.from("template_corrections").select("*");
   const { data: flags, error: fErr } = await supabase.from("admin_flags").select("*");
+  const { data: allMessages, error: mErr } = await supabase
+    .from("messages")
+    .select("session_id, created_at");
 
-  if (sErr || cErr || fErr) return res.status(500).json({ error: "Failed to load analytics" });
+  if (sErr || cErr || fErr || mErr) return res.status(500).json({ error: "Failed to load analytics" });
 
   const totalSessions = sessions.length;
 
@@ -31,17 +34,31 @@ router.get("/analytics/overview", async (req, res) => {
     }
   });
 
+  const messagesBySession = {};
+  allMessages.forEach((m) => {
+    if (!messagesBySession[m.session_id]) messagesBySession[m.session_id] = [];
+    messagesBySession[m.session_id].push(new Date(m.created_at).getTime());
+  });
+
+  const durations = Object.values(messagesBySession)
+    .filter((timestamps) => timestamps.length >= 2)
+    .map((timestamps) => {
+      const sorted = timestamps.sort((a, b) => a - b);
+      return (sorted[sorted.length - 1] - sorted[0]) / 1000;
+    });
+
+  const avgDurationSeconds = durations.length
+    ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+    : null;
+
+  const sessionsWithOnlyOneMessage = Object.values(messagesBySession).filter((t) => t.length === 1).length;
+
   const totalSent = corrections.length;
   const overrides = corrections.filter((c) => c.was_override).length;
   const autoSent = corrections.filter((c) => c.was_auto_sent).length;
   const aiAccuracy = totalSent > 0 ? Math.round(((totalSent - overrides) / totalSent) * 100) : null;
 
   const pendingNow = flags.filter((f) => !f.resolved).length;
-
-  const durations = sessions
-    .filter((s) => s.created_at && s.updated_at)
-    .map((s) => (new Date(s.updated_at) - new Date(s.created_at)) / 1000);
-  const avgDurationSeconds = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
 
   const funnel = {
     totalSessionsStarted: totalSessions,
@@ -60,6 +77,7 @@ router.get("/analytics/overview", async (req, res) => {
     styleCounts,
     hourCounts,
     avgDurationSeconds,
+    sessionsWithOnlyOneMessage,
     totalSessions,
   });
 });
