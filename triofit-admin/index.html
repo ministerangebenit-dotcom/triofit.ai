@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <meta charset="UTF-8">
 <title>TRIOFIT Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -100,11 +100,6 @@
     border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 20px; margin-bottom: 16px;
   }
   .breakdown h3 { font-size: 12px; color: #999; margin: 0 0 14px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; }
-  .bar-label { width: 150px; color: #ccc; flex-shrink: 0; }
-  .bar-track { flex: 1; height: 7px; background: #0f0e11; border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; background: linear-gradient(90deg, #C79B45, #D9AE5A); border-radius: 4px; }
-  .bar-count { width: 32px; text-align: right; color: #777; font-size: 12px; }
 
   .session-row {
     background: #0f0e11; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px;
@@ -115,10 +110,6 @@
   .session-row .meta { color: #888; font-size: 11px; margin-bottom: 6px; }
   .session-row .sit { color: #ddd; line-height: 1.6; font-style: italic; }
   .session-row .view-link { color: #C79B45; font-size: 11px; margin-top: 8px; display: inline-block; }
-
-  .funnel-step { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-  .funnel-bar { height: 34px; background: linear-gradient(90deg, #C79B45, #D9AE5A); border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 12px; font-weight: 600; color: #0a0a0a; }
-  .funnel-label { width: 160px; font-size: 12px; color: #ccc; flex-shrink: 0; }
 
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -156,7 +147,7 @@
 
 <div id="queueView">
   <div class="toolbar">
-    <input class="search-box" id="searchBox" placeholder="🔍 Search by name…" oninput="renderQueue()">
+    <input class="search-box" id="searchBox" placeholder="Search by name…" oninput="renderQueue()">
     <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
     <div class="filter-chip" data-filter="high" onclick="setFilter('high')">High confidence</div>
     <div class="filter-chip" data-filter="low" onclick="setFilter('low')">Needs review</div>
@@ -224,12 +215,12 @@
     <div id="sessionsList" class="empty">Loading…</div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="convoModal">
   <div class="modal-box">
     <div class="modal-header">
       <h3 id="convoModalTitle">Conversation</h3>
-      <button class="modal-close" onclick="closeConvoModal()">✕</button>
+      <button class="modal-close" onclick="closeConvoModal()">Close</button>
     </div>
     <div class="modal-body" id="convoModalBody"></div>
   </div>
@@ -240,6 +231,11 @@ const API = "https://triofitai-production.up.railway.app/api";
 let allTemplatesCache = [];
 let queueCache = [];
 let currentFilter = 'all';
+let chartInstances = {};
+
+const GOLD = '#C79B45';
+const GOLD_LIGHT = '#D9AE5A';
+const CHART_COLORS = ['#C79B45', '#D9AE5A', '#7F77DD', '#5DCAA5', '#D85A30', '#E9C275', '#8d6523'];
 
 function showTab(tab) {
   document.getElementById('queueView').style.display = tab === 'queue' ? 'block' : 'none';
@@ -254,7 +250,9 @@ function showTab(tab) {
 
 function setFilter(f) {
   currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+  document.querySelectorAll('.filter-chip').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.filter === f);
+  });
   renderQueue();
 }
 
@@ -273,18 +271,22 @@ function greetingTime() {
 
 function formatDuration(seconds) {
   if (seconds === null || seconds === undefined) return '—';
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) return seconds + 's';
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins}m ${secs}s`;
+  return mins + 'm ' + secs + 's';
 }
 
 async function loadKpis() {
   document.getElementById('greeting').textContent = greetingTime();
-  const [analyticsRes, correctionsRes] = await Promise.all([
-    fetch(`${API}/analytics/overview`).then(r => r.json()).catch(() => null),
-    fetch(`${API}/admin/corrections`).then(r => r.json()).catch(() => null),
-  ]);
+  let analyticsRes = null;
+  let correctionsRes = null;
+  try {
+    analyticsRes = await fetch(API + '/analytics/overview').then(function(r) { return r.json(); });
+  } catch (e) {}
+  try {
+    correctionsRes = await fetch(API + '/admin/corrections').then(function(r) { return r.json(); });
+  } catch (e) {}
 
   if (!analyticsRes || !correctionsRes) return;
 
@@ -293,30 +295,32 @@ async function loadKpis() {
     { label: 'Outfits sent', value: analyticsRes.funnel.outfitsSent },
     { label: 'AI accuracy', value: correctionsRes.stats.accuracy !== null ? correctionsRes.stats.accuracy + '%' : '—' },
     { label: 'Avg session time', value: formatDuration(analyticsRes.avgDurationSeconds) },
-    { label: 'Needs review', value: analyticsRes.funnel.currentlyPending },
+    { label: 'Needs review', value: analyticsRes.funnel.currentlyPending }
   ];
 
-  document.getElementById('kpiRow').innerHTML = kpis.map(k => `
-    <div class="kpi-card">
-      <div class="label">${k.label}</div>
-      <div class="value">${k.value}</div>
-    </div>
-  `).join('');
+  document.getElementById('kpiRow').innerHTML = kpis.map(function(k) {
+    return '<div class="kpi-card"><div class="label">' + k.label + '</div><div class="value">' + k.value + '</div></div>';
+  }).join('');
 }
 
 async function loadQueue() {
-  const res = await fetch(`${API}/admin/pending`);
+  const res = await fetch(API + '/admin/pending');
   queueCache = await res.json();
-  const allTemplates = await fetch(`${API}/templates`).then(r => r.json()).catch(() => []);
+  let allTemplates = [];
+  try {
+    allTemplates = await fetch(API + '/templates').then(function(r) { return r.json(); });
+  } catch (e) {}
   allTemplatesCache = allTemplates || [];
   renderQueue();
 }
 
 function renderQueue() {
-  const searchTerm = (document.getElementById('searchBox')?.value || '').toLowerCase();
-  let filtered = queueCache.filter(item => {
-    const name = (item.sessions?.name || '').toLowerCase();
-    if (searchTerm && !name.includes(searchTerm)) return false;
+  const searchBox = document.getElementById('searchBox');
+  const searchTerm = searchBox ? searchBox.value.toLowerCase() : '';
+
+  const filtered = queueCache.filter(function(item) {
+    const name = (item.sessions && item.sessions.name ? item.sessions.name : '').toLowerCase();
+    if (searchTerm && name.indexOf(searchTerm) === -1) return false;
     if (currentFilter === 'high' && (item.ai_confidence || 0) < 85) return false;
     if (currentFilter === 'low' && (item.ai_confidence || 0) >= 65) return false;
     return true;
@@ -330,45 +334,45 @@ function renderQueue() {
   }
 
   list.className = '';
-  list.innerHTML = filtered.map(item => `
-    <div class="queue-item">
-      <div class="top-row">
-        <div>
-          <div class="name">${item.sessions?.name || 'Unknown'}</div>
-          <div class="meta">${item.sessions?.occasion || ''} · goal: ${item.sessions?.goal || ''} · style: ${item.sessions?.style || ''}</div>
-        </div>
-        <div class="confidence-ring ${confidenceClass(item.ai_confidence || 0)}">${item.ai_confidence ?? '?'}%</div>
-      </div>
-      ${item.outfit_templates ? `
-        <div class="suggestion">
-          <img src="${item.outfit_templates.image_url}" onerror="this.style.display='none'">
-          <div class="suggestion-desc">${item.outfit_templates.description}</div>
-        </div>
-        <div class="action-row">
-          <button class="primary" onclick="sendSuggested('${item.session_id}')">Send suggested</button>
-          <button class="secondary" onclick="togglePicker('${item.session_id}')">Choose different</button>
-          <button class="secondary" onclick="viewConversation('${item.session_id}')">View chat</button>
-        </div>
-        <div class="picker" id="picker-${item.session_id}">
-          ${allTemplatesCache.map(t => `
-            <div class="picker-item" onclick="sendOverride('${item.session_id}', '${t.id}')">
-              <img src="${t.image_url}" onerror="this.style.display='none'">
-              <div>${t.description}</div>
-            </div>
-          `).join('')}
-        </div>
-      ` : '<div class="empty">No suggestion matched — add a template.</div>'}
-    </div>
-  `).join('');
+  list.innerHTML = filtered.map(function(item) {
+    const sess = item.sessions || {};
+    const tmpl = item.outfit_templates;
+    let html = '<div class="queue-item">';
+    html += '<div class="top-row"><div><div class="name">' + (sess.name || 'Unknown') + '</div>';
+    html += '<div class="meta">' + (sess.occasion || '') + ' · goal: ' + (sess.goal || '') + ' · style: ' + (sess.style || '') + '</div></div>';
+    html += '<div class="confidence-ring ' + confidenceClass(item.ai_confidence || 0) + '">' + (item.ai_confidence != null ? item.ai_confidence : '?') + '%</div></div>';
+
+    if (tmpl) {
+      html += '<div class="suggestion"><img src="' + tmpl.image_url + '" onerror="this.style.display=\'none\'">';
+      html += '<div class="suggestion-desc">' + tmpl.description + '</div></div>';
+      html += '<div class="action-row">';
+      html += '<button class="primary" onclick="sendSuggested(\'' + item.session_id + '\')">Send suggested</button>';
+      html += '<button class="secondary" onclick="togglePicker(\'' + item.session_id + '\')">Choose different</button>';
+      html += '<button class="secondary" onclick="viewConversation(\'' + item.session_id + '\')">View chat</button>';
+      html += '</div>';
+      html += '<div class="picker" id="picker-' + item.session_id + '">';
+      html += allTemplatesCache.map(function(t) {
+        return '<div class="picker-item" onclick="sendOverride(\'' + item.session_id + '\', \'' + t.id + '\')">' +
+          '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'"><div>' + t.description + '</div></div>';
+      }).join('');
+      html += '</div>';
+    } else {
+      html += '<div class="empty">No suggestion matched — add a template.</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }).join('');
 }
 
 function togglePicker(sessionId) {
-  document.getElementById(`picker-${sessionId}`).classList.toggle('open');
+  document.getElementById('picker-' + sessionId).classList.toggle('open');
 }
 
 async function sendSuggested(sessionId) {
-  await fetch(`${API}/templates/send`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+  await fetch(API + '/templates/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId })
   });
   loadQueue();
@@ -376,8 +380,9 @@ async function sendSuggested(sessionId) {
 }
 
 async function sendOverride(sessionId, templateId) {
-  await fetch(`${API}/templates/override`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+  await fetch(API + '/templates/override', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, template_id: templateId })
   });
   loadQueue();
@@ -395,18 +400,17 @@ async function addTemplate() {
     base_authority: parseInt(document.getElementById('t-auth').value),
     base_trust: parseInt(document.getElementById('t-trust').value),
     base_approachability: parseInt(document.getElementById('t-appr').value),
-    base_style_fit: parseInt(document.getElementById('t-fit').value),
+    base_style_fit: parseInt(document.getElementById('t-fit').value)
   };
-  await fetch(`${API}/templates`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+  await fetch(API + '/templates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   alert('Template saved.');
   document.getElementById('t-desc').value = '';
   document.getElementById('t-image').value = '';
 }
-
-let chartInstances = {};
 
 function destroyChart(id) {
   if (chartInstances[id]) {
@@ -415,23 +419,19 @@ function destroyChart(id) {
   }
 }
 
-const GOLD = '#C79B45';
-const GOLD_LIGHT = '#D9AE5A';
-const CHART_COLORS = ['#C79B45', '#D9AE5A', '#7F77DD', '#5DCAA5', '#D85A30', '#E9C275', '#8d6523'];
-
 function renderBarChart(canvasId, counts) {
   destroyChart(canvasId);
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
   const ctx = document.getElementById(canvasId).getContext('2d');
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: entries.map(([label]) => label),
+      labels: entries.map(function(e) { return e[0]; }),
       datasets: [{
-        data: entries.map(([, count]) => count),
+        data: entries.map(function(e) { return e[1]; }),
         backgroundColor: GOLD,
         borderRadius: 6,
-        maxBarThickness: 36,
+        maxBarThickness: 36
       }]
     },
     options: {
@@ -446,17 +446,17 @@ function renderBarChart(canvasId, counts) {
 
 function renderPieChart(canvasId, counts) {
   destroyChart(canvasId);
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
   const ctx = document.getElementById(canvasId).getContext('2d');
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: entries.map(([label]) => label),
+      labels: entries.map(function(e) { return e[0]; }),
       datasets: [{
-        data: entries.map(([, count]) => count),
+        data: entries.map(function(e) { return e[1]; }),
         backgroundColor: CHART_COLORS,
         borderColor: '#151417',
-        borderWidth: 2,
+        borderWidth: 2
       }]
     },
     options: {
@@ -475,11 +475,11 @@ function renderFunnelChart(funnel) {
   chartInstances['funnelChart'] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels,
+      labels: labels,
       datasets: [{
         data: values,
         backgroundColor: [GOLD, GOLD_LIGHT, '#5DCAA5'],
-        borderRadius: 6,
+        borderRadius: 6
       }]
     },
     options: {
@@ -494,7 +494,7 @@ function renderFunnelChart(funnel) {
 }
 
 async function loadAnalytics() {
-  const res = await fetch(`${API}/analytics/overview`);
+  const res = await fetch(API + '/analytics/overview');
   const data = await res.json();
 
   renderFunnelChart(data.funnel);
@@ -503,7 +503,7 @@ async function loadAnalytics() {
   renderPieChart('occasionChart', data.occasionCounts);
   renderBarChart('styleChart', data.styleCounts);
 
-  const sessRes = await fetch(`${API}/analytics/sessions`);
+  const sessRes = await fetch(API + '/analytics/sessions');
   const sessions = await sessRes.json();
   const list = document.getElementById('sessionsList');
 
@@ -514,42 +514,32 @@ async function loadAnalytics() {
   }
 
   list.className = '';
-  list.innerHTML = sessions.map(s => `
-    <div class="session-row" onclick="viewConversation('${s.session_id}')">
-      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleString()}</div>
-      ${s.situation ? `<div class="sit">"${s.situation}"</div>` : '<div class="sit">No situation text recorded.</div>'}
-      <div class="view-link">View full conversation →</div>
-    </div>
-  `).join('');
-}
-
-  list.className = '';
-  list.innerHTML = sessions.map(s => `
-    <div class="session-row" onclick="viewConversation('${s.session_id}')">
-      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleString()}</div>
-      ${s.situation ? `<div class="sit">"${s.situation}"</div>` : '<div class="sit">No situation text recorded.</div>'}
-      <div class="view-link">View full conversation →</div>
-    </div>
-  `).join('');
+  list.innerHTML = sessions.map(function(s) {
+    const sitHtml = s.situation ? ('<div class="sit">"' + s.situation + '"</div>') : '<div class="sit">No situation text recorded.</div>';
+    return '<div class="session-row" onclick="viewConversation(\'' + s.session_id + '\')">' +
+      '<div class="meta">' + (s.name || 'Unknown') + ' · ' + (s.goal || '') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
+      sitHtml +
+      '<div class="view-link">View full conversation -></div></div>';
+  }).join('');
 }
 
 async function viewConversation(sessionId) {
-  const res = await fetch(`${API}/analytics/session/${sessionId}/conversation`);
+  const res = await fetch(API + '/analytics/session/' + sessionId + '/conversation');
   const data = await res.json();
 
-  document.getElementById('convoModalTitle').textContent = data.session?.name || 'Conversation';
+  document.getElementById('convoModalTitle').textContent = (data.session && data.session.name) || 'Conversation';
   const body = document.getElementById('convoModalBody');
 
   if (!data.messages.length) {
     body.innerHTML = '<div class="empty">No messages recorded for this session.</div>';
   } else {
-    body.innerHTML = data.messages.map(m => `
-      <div class="msg-bubble ${m.sender === 'user' ? 'user' : 'admin'}">
-        ${m.message_type === 'image' && m.image_url ? `<img src="${m.image_url}">` : ''}
-        <div>${m.message}</div>
-        <div class="msg-time">${new Date(m.created_at).toLocaleTimeString()}</div>
-      </div>
-    `).join('');
+    body.innerHTML = data.messages.map(function(m) {
+      const imgHtml = (m.message_type === 'image' && m.image_url) ? ('<img src="' + m.image_url + '">') : '';
+      return '<div class="msg-bubble ' + (m.sender === 'user' ? 'user' : 'admin') + '">' +
+        imgHtml +
+        '<div>' + m.message + '</div>' +
+        '<div class="msg-time">' + new Date(m.created_at).toLocaleTimeString() + '</div></div>';
+    }).join('');
   }
 
   document.getElementById('convoModal').classList.add('open');
@@ -559,13 +549,16 @@ function closeConvoModal() {
   document.getElementById('convoModal').classList.remove('open');
 }
 
-document.getElementById('convoModal').addEventListener('click', (e) => {
+document.getElementById('convoModal').addEventListener('click', function(e) {
   if (e.target.id === 'convoModal') closeConvoModal();
 });
 
 loadQueue();
 loadKpis();
-setInterval(() => { loadQueue(); loadKpis(); }, 5000);
+setInterval(function() {
+  loadQueue();
+  loadKpis();
+}, 5000);
 </script>
 </body>
 </html>
