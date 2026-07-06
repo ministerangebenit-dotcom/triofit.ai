@@ -28,16 +28,13 @@
   }
   .kpi-card .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
   .kpi-card .value { font-size: 28px; font-weight: 700; color: #E9C275; font-family: Georgia, serif; }
-  .kpi-card .sub { font-size: 11px; color: #666; margin-top: 4px; }
 
   .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
   .tabs button {
     background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #999;
     padding: 9px 18px; border-radius: 20px; font-size: 13px; cursor: pointer;
-    transition: all 0.15s;
   }
   .tabs button.active { background: #C79B45; color: #0a0a0a; border: none; font-weight: 600; }
-  .tabs button:hover:not(.active) { border-color: rgba(199,155,69,0.4); color: #ccc; }
 
   .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
   .search-box {
@@ -54,7 +51,6 @@
     background: linear-gradient(145deg, #1a191d, #151417);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 18px; padding: 20px; margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   }
   .queue-item .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .queue-item .name { font-size: 16px; font-weight: 600; color: #fff; }
@@ -70,18 +66,14 @@
 
   .suggestion {
     display: flex; gap: 14px; align-items: center; margin-top: 14px;
-    background: #0f0e11; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);
+    background: #0f0e11; padding: 12px; border-radius: 14px;
   }
   .suggestion img { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; }
-  .suggestion-desc { font-size: 13px; flex: 1; color: #ddd; line-height: 1.5; }
-  .reasoning-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .reasoning-tag { font-size: 11px; padding: 3px 9px; border-radius: 12px; background: rgba(93,202,165,0.1); color: #5DCAA5; }
+  .suggestion-desc { font-size: 13px; flex: 1; color: #ddd; }
 
-  .action-row { display: flex; gap: 8px; margin-top: 14px; }
+  .action-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   button.primary { background: #C79B45; border: none; color: #0a0a0a; font-weight: 700; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 13px; }
   button.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: #ccc; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 13px; }
-  button.primary:hover { background: #D9AE5A; }
-  button.secondary:hover { border-color: rgba(199,155,69,0.4); color: #C79B45; }
 
   .picker { display: none; margin-top: 14px; background: #0f0e11; border-radius: 12px; padding: 10px; max-height: 260px; overflow-y: auto; }
   .picker.open { display: block; }
@@ -115,14 +107,37 @@
 
   .session-row {
     background: #0f0e11; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px;
-    padding: 14px 16px; margin-bottom: 10px; font-size: 13px;
+    padding: 14px 16px; margin-bottom: 10px; font-size: 13px; cursor: pointer;
+    transition: background 0.15s;
   }
+  .session-row:hover { background: #16151a; }
   .session-row .meta { color: #888; font-size: 11px; margin-bottom: 6px; }
   .session-row .sit { color: #ddd; line-height: 1.6; font-style: italic; }
+  .session-row .view-link { color: #C79B45; font-size: 11px; margin-top: 8px; display: inline-block; }
 
   .funnel-step { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
   .funnel-bar { height: 34px; background: linear-gradient(90deg, #C79B45, #D9AE5A); border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 12px; font-weight: 600; color: #0a0a0a; }
   .funnel-label { width: 160px; font-size: 12px; color: #ccc; flex-shrink: 0; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #151417; border-radius: 20px; max-width: 560px; width: 100%;
+    max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { margin: 0; font-size: 15px; color: #fff; }
+  .modal-close { background: transparent; border: none; color: #888; font-size: 20px; cursor: pointer; }
+  .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
+  .msg-bubble.user { background: rgba(199,155,69,0.1); border: 1px solid rgba(199,155,69,0.2); margin-left: auto; }
+  .msg-bubble.admin { background: #0f0e11; border: 1px solid rgba(255,255,255,0.04); }
+  .msg-bubble img { max-width: 100%; border-radius: 8px; margin-top: 6px; }
+  .msg-time { font-size: 10px; color: #666; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -150,7 +165,7 @@
 
 <div id="templatesView" style="display:none;">
   <div class="template-form">
-    <input id="t-desc" placeholder="Description (e.g. Navy overshirt, white tee, straight trousers)">
+    <input id="t-desc" placeholder="Description">
     <div class="row">
       <select id="t-occasion">
         <option value="A professional interview">Interview</option>
@@ -165,7 +180,7 @@
         <option value="Female">Female</option>
       </select>
     </div>
-    <input id="t-style" placeholder="Style tag (e.g. Classic & elegant)">
+    <input id="t-style" placeholder="Style tag">
     <input id="t-image" placeholder="Image URL">
     <div class="row">
       <input id="t-conf" type="number" placeholder="Confidence" value="80">
@@ -186,6 +201,10 @@
     <div id="funnelView"></div>
   </div>
   <div class="breakdown">
+    <h3>Usage by hour of day</h3>
+    <div id="hourBreakdown"></div>
+  </div>
+  <div class="breakdown">
     <h3>Goals</h3>
     <div id="goalBreakdown"></div>
   </div>
@@ -198,8 +217,18 @@
     <div id="styleBreakdown"></div>
   </div>
   <div class="breakdown">
-    <h3>Recent user situations</h3>
+    <h3>Recent sessions — click to view full conversation</h3>
     <div id="sessionsList" class="empty">Loading…</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="convoModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="convoModalTitle">Conversation</h3>
+      <button class="modal-close" onclick="closeConvoModal()">✕</button>
+    </div>
+    <div class="modal-body" id="convoModalBody"></div>
   </div>
 </div>
 
@@ -239,6 +268,14 @@ function greetingTime() {
   return 'Good evening, Kevin.';
 }
 
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
+}
+
 async function loadKpis() {
   document.getElementById('greeting').textContent = greetingTime();
   const [analyticsRes, correctionsRes] = await Promise.all([
@@ -252,7 +289,7 @@ async function loadKpis() {
     { label: 'Sessions', value: analyticsRes.funnel.totalSessionsStarted },
     { label: 'Outfits sent', value: analyticsRes.funnel.outfitsSent },
     { label: 'AI accuracy', value: correctionsRes.stats.accuracy !== null ? correctionsRes.stats.accuracy + '%' : '—' },
-    { label: 'Auto-sent', value: correctionsRes.stats.autoSent || 0 },
+    { label: 'Avg session time', value: formatDuration(analyticsRes.avgDurationSeconds) },
     { label: 'Needs review', value: analyticsRes.funnel.currentlyPending },
   ];
 
@@ -304,13 +341,10 @@ function renderQueue() {
           <img src="${item.outfit_templates.image_url}" onerror="this.style.display='none'">
           <div class="suggestion-desc">${item.outfit_templates.description}</div>
         </div>
-        <div class="reasoning-tags">
-          <span class="reasoning-tag">✓ ${item.sessions?.occasion || 'occasion match'}</span>
-          <span class="reasoning-tag">✓ ${item.sessions?.style || 'style match'}</span>
-        </div>
         <div class="action-row">
           <button class="primary" onclick="sendSuggested('${item.session_id}')">Send suggested</button>
           <button class="secondary" onclick="togglePicker('${item.session_id}')">Choose different</button>
+          <button class="secondary" onclick="viewConversation('${item.session_id}')">View chat</button>
         </div>
         <div class="picker" id="picker-${item.session_id}">
           ${allTemplatesCache.map(t => `
@@ -331,8 +365,7 @@ function togglePicker(sessionId) {
 
 async function sendSuggested(sessionId) {
   await fetch(`${API}/templates/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId })
   });
   loadQueue();
@@ -341,8 +374,7 @@ async function sendSuggested(sessionId) {
 
 async function sendOverride(sessionId, templateId) {
   await fetch(`${API}/templates/override`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, template_id: templateId })
   });
   loadQueue();
@@ -363,8 +395,7 @@ async function addTemplate() {
     base_style_fit: parseInt(document.getElementById('t-fit').value),
   };
   await fetch(`${API}/templates`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   alert('Template saved.');
@@ -408,6 +439,7 @@ async function loadAnalytics() {
   const data = await res.json();
 
   renderFunnel(data.funnel);
+  renderBreakdown('hourBreakdown', data.hourCounts, data.totalSessions);
   renderBreakdown('goalBreakdown', data.goalCounts, data.totalSessions);
   renderBreakdown('occasionBreakdown', data.occasionCounts, data.totalSessions);
   renderBreakdown('styleBreakdown', data.styleCounts, data.totalSessions);
@@ -416,21 +448,51 @@ async function loadAnalytics() {
   const sessions = await sessRes.json();
   const list = document.getElementById('sessionsList');
 
-  const withSituation = sessions.filter(s => s.situation);
-  if (!withSituation.length) {
+  if (!sessions.length) {
     list.className = 'empty';
-    list.innerHTML = 'No situation text recorded yet.';
+    list.innerHTML = 'No sessions recorded yet.';
     return;
   }
 
   list.className = '';
-  list.innerHTML = withSituation.map(s => `
-    <div class="session-row">
-      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleDateString()}</div>
-      <div class="sit">"${s.situation}"</div>
+  list.innerHTML = sessions.map(s => `
+    <div class="session-row" onclick="viewConversation('${s.session_id}')">
+      <div class="meta">${s.name || 'Unknown'} · ${s.goal || ''} · ${new Date(s.created_at).toLocaleString()}</div>
+      ${s.situation ? `<div class="sit">"${s.situation}"</div>` : '<div class="sit">No situation text recorded.</div>'}
+      <div class="view-link">View full conversation →</div>
     </div>
   `).join('');
 }
+
+async function viewConversation(sessionId) {
+  const res = await fetch(`${API}/analytics/session/${sessionId}/conversation`);
+  const data = await res.json();
+
+  document.getElementById('convoModalTitle').textContent = data.session?.name || 'Conversation';
+  const body = document.getElementById('convoModalBody');
+
+  if (!data.messages.length) {
+    body.innerHTML = '<div class="empty">No messages recorded for this session.</div>';
+  } else {
+    body.innerHTML = data.messages.map(m => `
+      <div class="msg-bubble ${m.sender === 'user' ? 'user' : 'admin'}">
+        ${m.message_type === 'image' && m.image_url ? `<img src="${m.image_url}">` : ''}
+        <div>${m.message}</div>
+        <div class="msg-time">${new Date(m.created_at).toLocaleTimeString()}</div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('convoModal').classList.add('open');
+}
+
+function closeConvoModal() {
+  document.getElementById('convoModal').classList.remove('open');
+}
+
+document.getElementById('convoModal').addEventListener('click', (e) => {
+  if (e.target.id === 'convoModal') closeConvoModal();
+});
 
 loadQueue();
 loadKpis();
