@@ -56,6 +56,24 @@ export default function Landing() {
         >
           {s.landingCta}
         </motion.button>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          style={{
+            marginTop: 32, padding: "16px 20px", borderRadius: 16,
+            background: "rgba(199,155,69,0.06)", border: "1px solid rgba(199,155,69,0.2)",
+            maxWidth: 380,
+          }}
+        >
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
+            {s.proTag}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7 }}>
+            {s.proPitch}
+          </div>
+        </motion.div>
       </div>
     </div>
   );
