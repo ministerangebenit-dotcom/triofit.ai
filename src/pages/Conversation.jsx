@@ -141,40 +141,40 @@ function ConfirmSummary({ s, extracted, onConfirm, onEdit }) {
 
 function ProcessingSequence({ s, onComplete }) {
   const [progress, setProgress] = useState(0);
-  const [visibleIndex, setVisibleIndex] = useState(-1);
-  const [doneIndexes, setDoneIndexes] = useState([]);
+  const [visibleIndex, setVisibleIndex] = useState(0);
   const messages = s.processingMessages;
+  const totalMs = 30000;
 
   useEffect(() => {
     let cancelled = false;
-    const totalMs = 60000;
+    let rafId;
+    const start = Date.now();
     const stepMs = totalMs / messages.length;
 
-    async function run() {
-      const start = Date.now();
-      const progressTimer = setInterval(() => {
-        const elapsed = Date.now() - start;
-        const pct = Math.min(100, (elapsed / totalMs) * 100);
-        setProgress(pct);
-        if (pct >= 100) clearInterval(progressTimer);
-      }, 200);
+    function tick() {
+      if (cancelled) return;
+      const elapsed = Date.now() - start;
+      const pct = Math.min(100, (elapsed / totalMs) * 100);
+      setProgress(pct);
 
-      for (let i = 0; i < messages.length; i++) {
-        if (cancelled) { clearInterval(progressTimer); return; }
-        setVisibleIndex(i);
-        await new Promise((r) => setTimeout(r, stepMs * 0.75));
-        if (cancelled) { clearInterval(progressTimer); return; }
-        setDoneIndexes((d) => [...d, i]);
-        await new Promise((r) => setTimeout(r, stepMs * 0.25));
+      const idx = Math.min(messages.length - 1, Math.floor(elapsed / stepMs));
+      setVisibleIndex(idx);
+
+      if (elapsed >= totalMs) {
+        setTimeout(() => {
+          if (!cancelled) onComplete?.();
+        }, 400);
+        return;
       }
-
-      clearInterval(progressTimer);
-      setProgress(100);
-      await new Promise((r) => setTimeout(r, 500));
-      if (!cancelled) onComplete?.();
+      rafId = requestAnimationFrame(tick);
     }
-    run();
-    return () => { cancelled = true; };
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
@@ -188,28 +188,27 @@ function ProcessingSequence({ s, onComplete }) {
           <span>{Math.round(progress)}%</span>
         </div>
         <div style={{ height: 5, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
-          <motion.div
-            style={{ height: "100%", background: "linear-gradient(90deg, var(--gold-light), var(--gold))" }}
-            animate={{ width: `${progress}%` }}
-            transition={{ ease: "linear", duration: 0.2 }}
+          <div
+            style={{
+              height: "100%",
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, var(--gold-light), var(--gold))",
+              transition: "width 0.3s linear",
+            }}
           />
         </div>
       </div>
       <div style={{ maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12, minHeight: 200 }}>
-        {messages.map((m, i) => {
-          if (i > visibleIndex) return null;
-          const isDone = doneIndexes.includes(i);
+        {messages.slice(0, visibleIndex + 1).map((m, i) => {
+          const isDone = i < visibleIndex;
           return (
-            <motion.div
+            <div
               key={i}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: isDone ? 0.5 : 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              style={{ fontSize: 14, color: isDone ? "var(--text-dim)" : "var(--text)", display: "flex", alignItems: "center", gap: 10 }}
+              style={{ fontSize: 14, color: isDone ? "var(--text-dim)" : "var(--text)", display: "flex", alignItems: "center", gap: 10, opacity: isDone ? 0.5 : 1 }}
             >
               {isDone ? <i className="ti ti-check" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0 }} /> : <LogoOrb size={16} thinking={true} />}
               {m}
-            </motion.div>
+            </div>
           );
         })}
       </div>
