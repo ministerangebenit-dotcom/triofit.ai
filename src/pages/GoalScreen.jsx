@@ -40,6 +40,13 @@ export default function GoalScreen() {
           {s.goalSub}
         </p>
 
+        <button
+  onClick={() => navigate("/name")}
+  style={{ background: "transparent", border: "none", color: "var(--text-dim)", fontSize: 13, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}
+>
+  <i className="ti ti-arrow-left" style={{ fontSize: 14 }} /> Back
+</button>
+        
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {GOALS.map((g) => (
             <motion.button
