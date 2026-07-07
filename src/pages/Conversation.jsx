@@ -578,6 +578,16 @@ export default function Conversation() {
 
   return (
     <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
+      <div style={{
+  position: "sticky", top: 0, zIndex: 5, padding: "16px 20px",
+  borderBottom: "1px solid var(--border-soft)", background: "var(--bg)",
+  display: "flex", alignItems: "center", gap: 10,
+}}>
+  <LogoOrb size={28} thinking={false} />
+  <span className="font-display" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", letterSpacing: "0.02em" }}>
+    TRIOFIT
+  </span>
+</div>
       <ThemeToggle />
       <LangToggle lang={lang} onChange={setLangState} />
       <ChatBackground />
