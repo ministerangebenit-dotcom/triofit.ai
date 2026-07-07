@@ -49,7 +49,7 @@ function RadarBars({ values, s }) {
   );
 }
 
-function SituationInput({ s, onSubmit }) {
+function SituationInput({ s, lang, onSubmit }) {
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
 
@@ -220,7 +220,25 @@ function ProcessingSequence({ s, onComplete }) {
 function PerceptionReveal({ s, analysis, onChoice, onReanalyze }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      {/* ... existing content unchanged ... */}
+      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
+        {s.revealImpression}
+      </div>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
+        <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", marginBottom: 12 }}>{analysis.impression}</p>
+        <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealReasons}</div>
+        {analysis.reasons.map((r, i) => (
+          <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 4, display: "flex", gap: 6 }}>
+            <span style={{ color: "var(--gold)" }}>—</span>{r}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
+        <div>{analysis.traits.strong.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {tr}</span>)}</div>
+        <div>{analysis.traits.caution.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {tr}</span>)}</div>
+      </div>
+      <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealPrediction}</div>
+      <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
+      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>{s.revealCta}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           {s.revealYes}
@@ -232,6 +250,20 @@ function PerceptionReveal({ s, analysis, onChoice, onReanalyze }) {
           {s.reanalyzeButton}
         </button>
       </div>
+    </motion.div>
+  );
+}
+
+function LimitReached({ s, onUpgrade }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "20px 0", textAlign: "center" }}>
+      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 16, lineHeight: 1.7 }}>{s.limitReached}</p>
+      <button
+        onClick={onUpgrade}
+        style={{ padding: "12px 24px", borderRadius: 50, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+      >
+        {s.proUpgradeButton}
+      </button>
     </motion.div>
   );
 }
@@ -429,55 +461,47 @@ export default function Conversation() {
   function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
- async function handleConfirm() {
-  await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, situation, ...profile });
-
-  try {
-    const limitRes = await axios.get(`${BACKEND}/session/${sessionId}/limit-check`);
-    if (!limitRes.data.allowed) {
-      setStage("limit-reached");
-      return;
+  async function handleSituationSubmit(text) {
+    setSituation(text);
+    pushUser(text);
+    setStage("extracting");
+    try {
+      const res = await axios.post(`${BACKEND}/extract`, { situation: text, goal });
+      setExtracted(res.data);
+      setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
+      setStage("confirm");
+    } catch {
+      pushAssistant(s.extractTrouble);
+      setStage("intake");
     }
-  } catch {
-    // if limit-check fails, fail open rather than blocking a user unfairly
   }
-
-  setStage("processing");
-}
-
-async function onProcessingComplete() {
-  try {
-    const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
-    setAnalysis(res.data);
-    setStage("reveal");
-    axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
-  } catch {
-    pushAssistant(s.stylistBrainTrouble);
-    setStage("reveal");
-    setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
-  }
-}
-
-function handleReanalyze() {
-  setStage("intake");
-  setAnalysis(null);
-  setExtracted(null);
-}
 
   function handleEditRequest() {
     setStage("intake");
   }
 
   async function handleConfirm() {
-  await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, situation, ...profile });
-  setStage("processing");
-}
+    await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, situation, ...profile });
+
+    try {
+      const limitRes = await axios.get(`${BACKEND}/session/${sessionId}/limit-check`);
+      if (!limitRes.data.allowed) {
+        setStage("limit-reached");
+        return;
+      }
+    } catch {
+      // if limit-check fails, fail open rather than blocking a user unfairly
+    }
+
+    setStage("processing");
+  }
 
   async function onProcessingComplete() {
     try {
       const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
       setAnalysis(res.data);
       setStage("reveal");
+      axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
     } catch {
       pushAssistant(s.stylistBrainTrouble);
       setStage("reveal");
@@ -485,19 +509,11 @@ function handleReanalyze() {
     }
   }
 
-  function LimitReached({ s, onUpgrade }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "20px 0", textAlign: "center" }}>
-      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 16, lineHeight: 1.7 }}>{s.limitReached}</p>
-      <button
-        onClick={onUpgrade}
-        style={{ padding: "12px 24px", borderRadius: 50, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
-      >
-        {s.proUpgradeButton}
-      </button>
-    </motion.div>
-  );
-}
+  function handleReanalyze() {
+    setStage("intake");
+    setAnalysis(null);
+    setExtracted(null);
+  }
 
   async function onRevealChoice(choice) {
     if (choice === "no") {
@@ -534,17 +550,17 @@ function handleReanalyze() {
   }
 
   async function triggerSuggestion(finalProfile) {
-  try {
-    const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
-    if (!res.data.suggestion) {
-      pushAssistant(s.noTemplateYet);
+    try {
+      const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
+      if (!res.data.suggestion) {
+        pushAssistant(s.noTemplateYet);
+      }
+      setShowChatInput(true);
+    } catch {
+      pushAssistant(s.catalogTrouble);
+      setShowChatInput(true);
     }
-    setShowChatInput(true);
-  } catch {
-    pushAssistant(s.catalogTrouble);
-    setShowChatInput(true);
   }
-}
 
   function sendFreeText() {
     if (!input.trim()) return;
@@ -591,7 +607,7 @@ function handleReanalyze() {
           ))}
         </AnimatePresence>
 
-        {stage === "intake" && <SituationInput s={s} onSubmit={handleSituationSubmit} />}
+        {stage === "intake" && <SituationInput s={s} lang={lang} onSubmit={handleSituationSubmit} />}
 
         {stage === "extracting" && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
@@ -604,7 +620,8 @@ function handleReanalyze() {
 
         {stage === "confirm" && extracted && <ConfirmSummary s={s} extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
         {stage === "processing" && <ProcessingSequence s={s} onComplete={onProcessingComplete} />}
-        {stage === "reveal" && analysis && <PerceptionReveal s={s} analysis={analysis} onChoice={onRevealChoice} />}
+        {stage === "limit-reached" && <LimitReached s={s} onUpgrade={() => alert("Contact your stylist directly to upgrade to Pro.")} />}
+        {stage === "reveal" && analysis && <PerceptionReveal s={s} analysis={analysis} onChoice={onRevealChoice} onReanalyze={handleReanalyze} />}
 
         {(stage === "refine-loading" || stage === "quickadvice-loading") && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
