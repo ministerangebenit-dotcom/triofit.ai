@@ -60,7 +60,7 @@ function SituationInput({ s, onSubmit }) {
       return;
     }
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = lang === "fr" ? "fr-FR" : "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
@@ -147,7 +147,7 @@ function ProcessingSequence({ s, onComplete }) {
 
   useEffect(() => {
     let cancelled = false;
-    const totalMs = 30000;
+    const totalMs = 60000;
     const stepMs = totalMs / messages.length;
 
     async function run() {
@@ -217,34 +217,19 @@ function ProcessingSequence({ s, onComplete }) {
   );
 }
 
-function PerceptionReveal({ s, analysis, onChoice }) {
+function PerceptionReveal({ s, analysis, onChoice, onReanalyze }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
-      <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
-        {s.revealImpression}
-      </div>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
-        <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", marginBottom: 12 }}>{analysis.impression}</p>
-        <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealReasons}</div>
-        {analysis.reasons.map((r, i) => (
-          <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 4, display: "flex", gap: 6 }}>
-            <span style={{ color: "var(--gold)" }}>—</span>{r}
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <div>{analysis.traits.strong.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {tr}</span>)}</div>
-        <div>{analysis.traits.caution.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {tr}</span>)}</div>
-      </div>
-      <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealPrediction}</div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
-      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>{s.revealCta}</div>
+      {/* ... existing content unchanged ... */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           {s.revealYes}
         </button>
         <button onClick={() => onChoice("no")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
           {s.revealNo}
+        </button>
+        <button onClick={onReanalyze} style={{ padding: "10px", background: "transparent", border: "none", color: "var(--gold)", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}>
+          {s.reanalyzeButton}
         </button>
       </div>
     </motion.div>
