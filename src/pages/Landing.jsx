@@ -4,13 +4,11 @@ import { motion } from "framer-motion";
 import BackgroundGlow from "../components/landing/BackgroundGlow";
 import LogoOrb from "../components/shared/LogoOrb";
 import LangToggle from "../components/shared/LangToggle";
-import ProModal from "../components/shared/ProModal";
 import { useLang, t } from "../lib/i18n";
 
 export default function Landing() {
   const navigate = useNavigate();
   const [lang, setLangState] = useState(useLang());
-  const [proOpen, setProOpen] = useState(false);
   const s = t(lang);
 
   return (
@@ -59,15 +57,14 @@ export default function Landing() {
           {s.landingCta}
         </motion.button>
 
-        <motion.button
-          onClick={() => setProOpen(true)}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
           style={{
             marginTop: 32, padding: "16px 20px", borderRadius: 16,
             background: "rgba(199,155,69,0.06)", border: "1px solid rgba(199,155,69,0.2)",
-            maxWidth: 380, width: "100%", cursor: "pointer", textAlign: "left",
+            maxWidth: 380,
           }}
         >
           <div style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
@@ -76,10 +73,8 @@ export default function Landing() {
           <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7 }}>
             {s.proPitch}
           </div>
-        </motion.button>
+        </motion.div>
       </div>
-
-      <ProModal open={proOpen} onClose={() => setProOpen(false)} />
     </div>
   );
 }
