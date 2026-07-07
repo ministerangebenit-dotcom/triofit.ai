@@ -51,20 +51,57 @@ function RadarBars({ values, s }) {
 
 function SituationInput({ s, onSubmit }) {
   const [text, setText] = useState("");
+  const [listening, setListening] = useState(false);
+
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice input isn't supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setText((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.start();
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 12, lineHeight: 1.7 }}>{s.situationPrompt}</p>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={s.situationPlaceholder}
-        rows={4}
-        style={{
-          width: "100%", background: "var(--surface)", border: "1px solid var(--border-soft)",
-          borderRadius: 14, padding: 14, fontSize: 14, color: "var(--text)", outline: "none",
-          resize: "none", fontFamily: "inherit", marginBottom: 12,
-        }}
-      />
+      <div style={{ position: "relative" }}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={s.situationPlaceholder}
+          rows={4}
+          style={{
+            width: "100%", background: "var(--surface)", border: "1px solid var(--border-soft)",
+            borderRadius: 14, padding: 14, paddingRight: 48, fontSize: 14, color: "var(--text)", outline: "none",
+            resize: "none", fontFamily: "inherit", marginBottom: 12,
+          }}
+        />
+        <button
+          onClick={startListening}
+          style={{
+            position: "absolute", top: 12, right: 12, width: 32, height: 32, borderRadius: "50%",
+            background: listening ? "var(--gold)" : "var(--surface-2)", border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          aria-label="Voice input"
+        >
+          <i className="ti ti-microphone" style={{ fontSize: 16, color: listening ? "#080808" : "var(--text-dim)" }} />
+        </button>
+      </div>
       <button
         onClick={() => text.trim() && onSubmit(text.trim())}
         disabled={!text.trim()}
@@ -110,7 +147,7 @@ function ProcessingSequence({ s, onComplete }) {
 
   useEffect(() => {
     let cancelled = false;
-    const totalMs = 60000;
+    const totalMs = 30000;
     const stepMs = totalMs / messages.length;
 
     async function run() {
@@ -407,20 +444,40 @@ export default function Conversation() {
   function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
-  async function handleSituationSubmit(text) {
-    setSituation(text);
-    pushUser(text);
-    setStage("extracting");
-    try {
-      const res = await axios.post(`${BACKEND}/extract`, { situation: text, goal });
-      setExtracted(res.data);
-      setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
-      setStage("confirm");
-    } catch {
-      pushAssistant(s.extractTrouble);
-      setStage("intake");
+ async function handleConfirm() {
+  await axios.post(`${BACKEND}/session`, { session_id: sessionId, name: userName, goal, situation, ...profile });
+
+  try {
+    const limitRes = await axios.get(`${BACKEND}/session/${sessionId}/limit-check`);
+    if (!limitRes.data.allowed) {
+      setStage("limit-reached");
+      return;
     }
+  } catch {
+    // if limit-check fails, fail open rather than blocking a user unfairly
   }
+
+  setStage("processing");
+}
+
+async function onProcessingComplete() {
+  try {
+    const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
+    setAnalysis(res.data);
+    setStage("reveal");
+    axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
+  } catch {
+    pushAssistant(s.stylistBrainTrouble);
+    setStage("reveal");
+    setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
+  }
+}
+
+function handleReanalyze() {
+  setStage("intake");
+  setAnalysis(null);
+  setExtracted(null);
+}
 
   function handleEditRequest() {
     setStage("intake");
@@ -442,6 +499,20 @@ export default function Conversation() {
       setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
     }
   }
+
+  function LimitReached({ s, onUpgrade }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "20px 0", textAlign: "center" }}>
+      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 16, lineHeight: 1.7 }}>{s.limitReached}</p>
+      <button
+        onClick={onUpgrade}
+        style={{ padding: "12px 24px", borderRadius: 50, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+      >
+        {s.proUpgradeButton}
+      </button>
+    </motion.div>
+  );
+}
 
   async function onRevealChoice(choice) {
     if (choice === "no") {
