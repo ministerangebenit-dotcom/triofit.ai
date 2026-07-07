@@ -9,11 +9,19 @@ router.post("/extract", async (req, res) => {
   try {
     const { situation, goal } = req.body;
 
-    const prompt = `A person is using a perception-coaching app. Their goal: "${goal}". They described their situation in their own words:
+    const prompt = `Person's situation, in their own words: "${situation}"
+Their goal: "${goal}"
+Inferred profile: ${JSON.stringify(profile)}.
 
-"${situation}"
+Write a perception analysis in this exact format, no extra text. Address the person directly as "you" throughout — never refer to them as "the user" or in third person.
 
-Extract the following as best you can infer. If gender genuinely cannot be inferred from what they wrote, write "unclear" for gender only — but you MUST pick the closest matching OCCASION from the fixed list below, never invent your own phrase.
+IMPRESSION: [2 sentences on how you come across, based strictly on what you said, addressed directly to the person as "you"]
+REASON1: [one specific thing from your own words that supports this, addressed as "you"]
+REASON2: [another specific thing from your own words, addressed as "you"]
+STRONG1: [one word trait]
+STRONG2: [one word trait]
+CAUTION1: [one short cautionary trait]
+PREDICTION: [1-2 sentences estimating the likelihood your goal is achieved with your current approach, addressed as "you", framed as an estimate not certainty]`;
 
 OCCASION must be exactly one of these five, verbatim:
 - A professional interview
@@ -63,7 +71,9 @@ REASON1: [one specific thing from their own words that supports this]
 REASON2: [another specific thing from their own words]
 STRONG1: [one word trait]
 STRONG2: [one word trait]
-CAUTION1: [one short cautionary trait]
+STRONG3: [one word trait]
+CAUTION1: [one cautionary trait]
+CAUTION2: [one cautionary trait]
 PREDICTION: [1-2 sentences estimating the likelihood their goal is achieved with their current approach, framed as an estimate not certainty]`;
 
     const raw = await chatCompletion([{ role: "user", text: prompt }]);
@@ -77,8 +87,8 @@ PREDICTION: [1-2 sentences estimating the likelihood their goal is achieved with
       impression: extract("IMPRESSION"),
       reasons: [extract("REASON1"), extract("REASON2")].filter(Boolean),
       traits: {
-        strong: [extract("STRONG1"), extract("STRONG2")].filter(Boolean),
-        caution: [extract("CAUTION1")].filter(Boolean),
+        strong: [extract("STRONG1"), extract("STRONG2"), extract("STRONG3")].filter(Boolean),
+        caution: [extract("CAUTION1"), extract("CAUTION2")].filter(Boolean),
       },
       prediction: extract("PREDICTION"),
       blueprint: scoreProfile(profile),
@@ -99,7 +109,7 @@ router.post("/refine-questions", async (req, res) => {
 
     const prompt = `Situation: "${situation}". Goal: "${goal}". Profile so far: ${JSON.stringify(profile)}.
 
-Generate exactly 2 short, targeted follow-up questions that would meaningfully improve an outfit recommendation for this specific person and situation. Each question needs 3-4 short multiple choice options.
+Generate exactly 3 short, targeted follow-up questions that would meaningfully improve an outfit recommendation for this specific person and situation. Each question needs 3-4 short multiple choice options.
 
 Reply in exactly this format:
 Q1: [question text]
