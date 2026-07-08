@@ -47,10 +47,16 @@ export default function Landing() {
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           style={{
-            marginTop: 40, padding: "15px 32px", borderRadius: 50,
+            marginTop: 40,
+            padding: "15px 32px",
+            borderRadius: 50,
             background: "linear-gradient(135deg, var(--gold-light), var(--gold))",
-            border: "none", color: "#080808", fontSize: 14, fontWeight: 700,
-            letterSpacing: "0.04em", cursor: "pointer",
+            border: "none",
+            color: "#080808",
+            fontSize: 14,
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            cursor: "pointer",
           }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -65,12 +71,27 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
           style={{
-            marginTop: 32, padding: "16px 20px", borderRadius: 16,
-            background: "rgba(199,155,69,0.06)", border: "1px solid rgba(199,155,69,0.2)",
-            maxWidth: 380, width: "100%", cursor: "pointer", textAlign: "left",
+            marginTop: 32,
+            padding: "16px 20px",
+            borderRadius: 16,
+            background: "rgba(199,155,69,0.06)",
+            border: "1px solid rgba(199,155,69,0.2)",
+            maxWidth: 380,
+            width: "100%",
+            cursor: "pointer",
+            textAlign: "left",
           }}
         >
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
+          <div
+            style={{
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              color: "var(--gold)",
+              textTransform: "uppercase",
+              marginBottom: 8,
+              fontWeight: 700,
+            }}
+          >
             {s.proTag}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7 }}>
@@ -80,28 +101,6 @@ export default function Landing() {
       </div>
 
       <ProModal open={proOpen} onClose={() => setProOpen(false)} />
-    </div>
-  );
-}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          style={{
-            marginTop: 32, padding: "16px 20px", borderRadius: 16,
-            background: "rgba(199,155,69,0.06)", border: "1px solid rgba(199,155,69,0.2)",
-            maxWidth: 380,
-          }}
-        >
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
-            {s.proTag}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7 }}>
-            {s.proPitch}
-          </div>
-        </motion.div>
-      </div>
     </div>
   );
 }
