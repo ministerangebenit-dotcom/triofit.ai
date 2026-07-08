@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import LogoOrb from "../components/shared/LogoOrb";
 import ChatBackground from "../components/chat/ChatBackground";
+import ProModal from "../components/shared/ProModal";
 import ThemeToggle from "../components/shared/ThemeToggle";
 import LangToggle from "../components/shared/LangToggle";
 import { sb } from "../lib/supabase";
@@ -407,6 +408,7 @@ export default function Conversation() {
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatListening, setChatListening] = useState(false);
   const endRef = useRef(null);
+  const [proOpen, setProOpen] = useState(false);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
 
@@ -510,22 +512,23 @@ export default function Conversation() {
     setStage("processing");
   }
 
-  async function onProcessingComplete() {
-    try {
-      const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
-      setAnalysis(res.data);
-      setStage("reveal");
-      axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
+ async function onProcessingComplete() {
+  try {
+    const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
+    setAnalysis(res.data);
+    setStage("reveal");
+    setProOpen(true);
+    axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
 
-      axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
-        .then((r) => setPrefetchedRefineQs(r.data.questions))
-        .catch(() => {});
-    } catch {
-      pushAssistant(s.stylistBrainTrouble);
-      setStage("reveal");
-      setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
-    }
+    axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
+      .then((r) => setPrefetchedRefineQs(r.data.questions))
+      .catch(() => {});
+  } catch {
+    pushAssistant(s.stylistBrainTrouble);
+    setStage("reveal");
+    setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
   }
+}
 
   function handleReanalyze() {
     setStage("intake");
@@ -736,6 +739,10 @@ export default function Conversation() {
           </div>
         </div>
       )}
+      <ProModal open={proOpen} onClose={() => setProOpen(false)} />
+    </div>
+  );
+}
     </div>
   );
 }
