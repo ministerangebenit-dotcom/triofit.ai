@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import BackgroundGlow from "../components/landing/BackgroundGlow";
@@ -12,6 +12,13 @@ export default function Landing() {
   const [lang, setLangState] = useState(useLang());
   const [proOpen, setProOpen] = useState(false);
   const s = t(lang);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProOpen(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="relative h-screen overflow-hidden flex flex-col justify-center items-center px-8" style={{ background: "var(--bg)" }}>
