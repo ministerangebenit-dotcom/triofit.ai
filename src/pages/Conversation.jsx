@@ -400,10 +400,12 @@ export default function Conversation() {
   const [profile, setProfile] = useState({});
   const [analysis, setAnalysis] = useState(null);
   const [refineQs, setRefineQs] = useState(null);
+  const [prefetchedRefineQs, setPrefetchedRefineQs] = useState(null);
   const [blueprintData, setBlueprintData] = useState(null);
   const [quickTips, setQuickTips] = useState(null);
   const [input, setInput] = useState("");
   const [showChatInput, setShowChatInput] = useState(false);
+  const [chatListening, setChatListening] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
@@ -425,6 +427,19 @@ export default function Conversation() {
         });
         setStage("blueprint");
         setShowChatInput(true);
+      }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    axios.get(`${BACKEND}/history/${sessionId}`).then((res) => {
+      if (!res.data.session || res.data.messages.length === 0) {
+        axios.post(`${BACKEND}/messages`, {
+          session_id: sessionId,
+          sender: "admin",
+          message: s.greeting(userName),
+          message_type: "text",
+        }).catch(() => {});
       }
     }).catch(() => {});
   }, []);
@@ -501,6 +516,10 @@ export default function Conversation() {
       setAnalysis(res.data);
       setStage("reveal");
       axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
+
+      axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
+        .then((r) => setPrefetchedRefineQs(r.data.questions))
+        .catch(() => {});
     } catch {
       pushAssistant(s.stylistBrainTrouble);
       setStage("reveal");
@@ -512,6 +531,7 @@ export default function Conversation() {
     setStage("intake");
     setAnalysis(null);
     setExtracted(null);
+    setPrefetchedRefineQs(null);
   }
 
   async function onRevealChoice(choice) {
@@ -527,6 +547,12 @@ export default function Conversation() {
         setStage("quickadvice");
         setShowChatInput(true);
       }
+      return;
+    }
+
+    if (prefetchedRefineQs) {
+      setRefineQs(prefetchedRefineQs);
+      setStage("refine");
       return;
     }
 
@@ -561,6 +587,28 @@ export default function Conversation() {
     }
   }
 
+  function startChatListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice input isn't supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang === "fr" ? "fr-FR" : "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setChatListening(true);
+    recognition.onend = () => setChatListening(false);
+    recognition.onerror = () => setChatListening(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.start();
+  }
+
   function sendFreeText() {
     if (!input.trim()) return;
     const text = input.trim();
@@ -578,16 +626,19 @@ export default function Conversation() {
 
   return (
     <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
-      <div style={{
-  position: "sticky", top: 0, zIndex: 5, padding: "16px 20px",
-  borderBottom: "1px solid var(--border-soft)", background: "var(--bg)",
-  display: "flex", alignItems: "center", gap: 10,
-}}>
-  <LogoOrb size={28} thinking={false} />
-  <span className="font-display" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", letterSpacing: "0.02em" }}>
-    TRIOFIT
-  </span>
-</div>
+      <div
+        style={{
+          position: "sticky", top: 0, zIndex: 5, padding: "16px 20px",
+          borderBottom: "1px solid var(--border-soft)", background: "var(--bg)",
+          display: "flex", alignItems: "center", gap: 10,
+        }}
+      >
+        <LogoOrb size={28} thinking={false} />
+        <span className="font-display" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", letterSpacing: "0.02em" }}>
+          TRIOFIT
+        </span>
+      </div>
+
       <ThemeToggle />
       <LangToggle lang={lang} onChange={setLangState} />
       <ChatBackground />
@@ -662,7 +713,16 @@ export default function Conversation() {
               placeholder={s.chatPlaceholder}
               style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
             />
-            <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Voice">
+            <button
+              onClick={startChatListening}
+              style={{
+                background: chatListening ? "var(--gold)" : "transparent",
+                border: "none", cursor: "pointer",
+                color: chatListening ? "#080808" : "var(--text-dim)",
+                display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
+              }}
+              aria-label="Voice"
+            >
               <i className="ti ti-microphone" style={{ fontSize: 18 }} />
             </button>
             <button
