@@ -514,20 +514,21 @@ async function loadAnalytics() {
   }
 
   list.className = '';
- list.innerHTML = sessions.map(function(s) {
-  const sitHtml = s.situation ? ('<div class="sit">"' + s.situation + '"</div>') : '<div class="sit">No situation text recorded.</div>';
-  const proLabel = s.is_pro ? 'Pro ✓' : 'Make Pro';
-  const proClass = s.is_pro ? 'primary' : 'secondary';
-  return '<div class="session-row">' +
-    '<div onclick="viewConversation(\'' + s.session_id + '\')">' +
-    '<div class="meta">' + (s.name || 'Unknown') + ' · ' + (s.goal || '') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
-    sitHtml +
-    '<div class="view-link">View full conversation -></div></div>' +
-    '<button class="' + proClass + '" style="margin-top:8px;" onclick="event.stopPropagation(); toggleProStatus(\'' + s.session_id + '\', ' + (!s.is_pro) + ')">' + proLabel + '</button>' +
-    '</div>';
-}).join('');
+  list.innerHTML = sessions.map(function(s) {
+    const sitHtml = s.situation ? ('<div class="sit">"' + s.situation + '"</div>') : '<div class="sit">No situation text recorded.</div>';
+    const proLabel = s.is_pro ? 'Pro' : 'Make Pro';
+    const proClass = s.is_pro ? 'primary' : 'secondary';
+    return '<div class="session-row">' +
+      '<div onclick="viewConversation(\'' + s.session_id + '\')">' +
+      '<div class="meta">' + (s.name || 'Unknown') + ' · ' + (s.goal || '') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
+      sitHtml +
+      '<div class="view-link">View full conversation -></div></div>' +
+      '<button class="' + proClass + '" style="margin-top:8px;" onclick="event.stopPropagation(); toggleProStatus(\'' + s.session_id + '\', ' + (!s.is_pro) + ')">' + proLabel + '</button>' +
+      '</div>';
+  }).join('');
+}
 
- async function toggleProStatus(sessionId, newStatus) {
+async function toggleProStatus(sessionId, newStatus) {
   await fetch(API + '/session/' + sessionId + '/pro-status', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -535,7 +536,7 @@ async function loadAnalytics() {
   });
   loadAnalytics();
 }
- 
+
 async function viewConversation(sessionId) {
   const res = await fetch(API + '/analytics/session/' + sessionId + '/conversation');
   const data = await res.json();
@@ -566,7 +567,6 @@ document.getElementById('convoModal').addEventListener('click', function(e) {
   if (e.target.id === 'convoModal') closeConvoModal();
 });
 
- <script>
 loadQueue();
 loadKpis();
 setInterval(function() {
