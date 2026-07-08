@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import LogoOrb from "../components/shared/LogoOrb";
 import ChatBackground from "../components/chat/ChatBackground";
-import ProModal from "../components/shared/ProModal";
 import ThemeToggle from "../components/shared/ThemeToggle";
 import LangToggle from "../components/shared/LangToggle";
+import ProModal from "../components/shared/ProModal";
 import { sb } from "../lib/supabase";
 import { useLang, t } from "../lib/i18n";
 
@@ -407,8 +407,8 @@ export default function Conversation() {
   const [input, setInput] = useState("");
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatListening, setChatListening] = useState(false);
-  const endRef = useRef(null);
   const [proOpen, setProOpen] = useState(false);
+  const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
 
@@ -512,23 +512,23 @@ export default function Conversation() {
     setStage("processing");
   }
 
- async function onProcessingComplete() {
-  try {
-    const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
-    setAnalysis(res.data);
-    setStage("reveal");
-    setProOpen(true);
-    axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
+  async function onProcessingComplete() {
+    try {
+      const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
+      setAnalysis(res.data);
+      setStage("reveal");
+      setProOpen(true);
+      axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
 
-    axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
-      .then((r) => setPrefetchedRefineQs(r.data.questions))
-      .catch(() => {});
-  } catch {
-    pushAssistant(s.stylistBrainTrouble);
-    setStage("reveal");
-    setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
+      axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
+        .then((r) => setPrefetchedRefineQs(r.data.questions))
+        .catch(() => {});
+    } catch {
+      pushAssistant(s.stylistBrainTrouble);
+      setStage("reveal");
+      setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
+    }
   }
-}
 
   function handleReanalyze() {
     setStage("intake");
@@ -636,6 +636,16 @@ export default function Conversation() {
           display: "flex", alignItems: "center", gap: 10,
         }}
       >
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4,
+          }}
+          aria-label="Back"
+        >
+          <i className="ti ti-arrow-left" style={{ fontSize: 18 }} />
+        </button>
         <LogoOrb size={28} thinking={false} />
         <span className="font-display" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", letterSpacing: "0.02em" }}>
           TRIOFIT
@@ -739,10 +749,8 @@ export default function Conversation() {
           </div>
         </div>
       )}
+
       <ProModal open={proOpen} onClose={() => setProOpen(false)} />
-    </div>
-  );
-}
     </div>
   );
 }
