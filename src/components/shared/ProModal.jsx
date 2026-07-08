@@ -132,7 +132,7 @@ export default function ProModal({ open, onClose }) {
               Message us on WhatsApp to subscribe — we'll set up your Pro access right away.
             </p>
 
-            
+            <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
