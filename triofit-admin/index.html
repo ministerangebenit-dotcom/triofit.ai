@@ -27,8 +27,7 @@
     --pink: #D96B8C;
     --font-display: Georgia, 'Times New Roman', serif;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
@@ -37,8 +36,6 @@
     height: 100vh;
     overflow: hidden;
   }
-
-  /* ═══════════ SIDEBAR ═══════════ */
   .sidebar {
     width: 240px; min-width: 240px;
     background: var(--surface);
@@ -46,25 +43,9 @@
     display: flex; flex-direction: column;
     padding: 20px 0;
   }
-  .sidebar-brand {
-    padding: 0 20px 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
-  }
-  .sidebar-brand .logo {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 0.03em;
-  }
-  .sidebar-brand .sub {
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-top: 2px;
-  }
+  .sidebar-brand { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-brand .logo { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: 0.03em; }
+  .sidebar-brand .sub { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
   .sidebar-nav { flex: 1; padding: 0 12px; }
   .sidebar-nav button {
     display: flex; align-items: center; gap: 10px;
@@ -76,337 +57,192 @@
   .sidebar-nav button:hover { background: var(--surface2); color: var(--text); }
   .sidebar-nav button.active { background: var(--gold-dim); color: var(--gold); font-weight: 600; }
   .sidebar-nav button .icon { font-size: 16px; width: 20px; text-align: center; }
-  .sidebar-nav button .badge {
-    margin-left: auto; background: var(--gold);
-    color: #0a0a0a; font-size: 10px; font-weight: 700;
-    padding: 2px 7px; border-radius: 10px;
-  }
-  .sidebar-footer {
-    padding: 12px 20px; border-top: 1px solid var(--border);
-    font-size: 11px; color: var(--text-muted);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .sidebar-footer .dot {
-    width: 7px; height: 7px; background: var(--green);
-    border-radius: 50%; animation: pulse 2s infinite;
-  }
+  .sidebar-nav button .badge { margin-left: auto; background: var(--gold); color: #0a0a0a; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+  .sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .sidebar-footer .dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  /* ═══════════ MAIN ═══════════ */
-  .main {
-    flex: 1; overflow-y: auto; padding: 24px 32px;
-    background: var(--bg);
-  }
+  .main { flex: 1; overflow-y: auto; padding: 24px 32px; background: var(--bg); }
   .page { display: none; }
   .page.active { display: block; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .page-header h2 { font-family: var(--font-display); font-size: 20px; color: var(--text); letter-spacing: 0.02em; }
+  .page-header .subtitle { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
-  .page-header {
-    display: flex; justify-content: space-between;
-    align-items: center; margin-bottom: 24px;
-  }
-  .page-header h2 {
-    font-family: var(--font-display);
-    font-size: 20px; color: var(--text); letter-spacing: 0.02em;
-  }
-  .page-header .subtitle {
-    font-size: 12px; color: var(--text-dim); margin-top: 4px;
-  }
-
-  /* ═══════════ KPI ROW ═══════════ */
   .kpi-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
-  .kpi-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px 20px; flex: 1; min-width: 130px;
-    transition: border-color 0.2s;
-  }
-  .kpi-card:hover { border-color: var(--gold-border); }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; flex: 1; min-width: 130px; }
   .kpi-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
   .kpi-card .value { font-size: 26px; font-weight: 700; color: var(--gold); font-family: var(--font-display); }
-  .kpi-card .trend { font-size: 11px; margin-top: 4px; }
-  .kpi-card .trend.up { color: var(--green); }
-  .kpi-card .trend.down { color: var(--red); }
 
-  /* ═══════════ QUEUE ═══════════ */
   .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-  .search-box {
-    flex: 1; min-width: 180px; padding: 9px 14px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text); font-size: 13px; outline: none;
-  }
+  .search-box { flex: 1; min-width: 180px; padding: 9px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; outline: none; }
   .search-box:focus { border-color: var(--gold-border); }
   .search-box::placeholder { color: var(--text-muted); }
-  .filter-chip {
-    padding: 7px 13px; border-radius: 16px; font-size: 11px; cursor: pointer;
-    background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
-    transition: all 0.15s;
-  }
+  .filter-chip { padding: 7px 13px; border-radius: 16px; font-size: 11px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
   .filter-chip.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
-  .filter-chip:hover { border-color: var(--gold-border); }
 
-  /* ═══════════ QUEUE ITEMS ═══════════ */
   .queue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
-  .queue-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 18px 20px;
-    transition: border-color 0.2s;
-  }
-  .queue-card:hover { border-color: var(--gold-border); }
+  .queue-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
   .queue-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .queue-card .name { font-size: 15px; font-weight: 600; color: var(--text); }
-  .queue-card .meta-row { font-size: 11px; color: var(--text-dim); margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .queue-card .meta-row span { display: flex; align-items: center; gap: 4px; }
-
-  .confidence-badge {
-    padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 600;
-    display: inline-flex; align-items: center; gap: 4px;
-  }
+  .queue-card .name { font-size: 15px; font-weight: 600; }
+  .queue-card .meta-row { font-size: 11px; color: var(--text-dim); display: flex; gap: 12px; flex-wrap: wrap; }
+  .confidence-badge { padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 600; }
   .confidence-badge.high { background: rgba(93,202,165,0.1); color: var(--green); }
   .confidence-badge.mid { background: rgba(199,155,69,0.1); color: var(--gold); }
   .confidence-badge.low { background: rgba(216,90,48,0.1); color: var(--red); }
-
-  .queue-card .suggestion {
-    display: flex; gap: 10px; align-items: center; margin-top: 12px;
-    background: var(--surface2); padding: 10px; border-radius: 10px;
-  }
-  .queue-card .suggestion img {
-    width: 56px; height: 56px; object-fit: cover; border-radius: 8px; flex-shrink: 0;
-  }
-  .queue-card .suggestion .desc { font-size: 12px; color: var(--text); flex: 1; line-height: 1.5; }
-
+  .queue-card .suggestion { display: flex; gap: 10px; align-items: center; margin-top: 12px; background: var(--surface2); padding: 10px; border-radius: 10px; }
+  .queue-card .suggestion img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
   .queue-card .actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-  button {
-    font-family: inherit; cursor: pointer; transition: all 0.15s;
-  }
+  button { font-family: inherit; cursor: pointer; transition: all 0.15s; }
   button:active { transform: scale(0.97); }
-  .btn-primary {
-    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    background: var(--gold); border: none; color: #0a0a0a;
-  }
-  .btn-primary:hover { background: var(--gold-light); }
-  .btn-secondary {
-    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
-    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
-  }
-  .btn-secondary:hover { border-color: var(--gold-border); color: var(--text); }
-  .btn-view {
-    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
-    background: transparent; border: 1px solid var(--border); color: var(--purple);
-  }
-  .btn-view:hover { border-color: var(--purple); }
-
-  .picker-panel {
-    display: none; margin-top: 10px; background: var(--surface2);
-    border-radius: 10px; padding: 8px; max-height: 200px; overflow-y: auto;
-  }
+  .btn-primary { padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--gold); border: none; color: #0a0a0a; }
+  .btn-secondary { padding: 9px 16px; border-radius: 8px; font-size: 12px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn-view { padding: 9px 16px; border-radius: 8px; font-size: 12px; background: transparent; border: 1px solid var(--border); color: var(--purple); }
+  .picker-panel { display: none; margin-top: 10px; background: var(--surface2); border-radius: 10px; padding: 8px; max-height: 200px; overflow-y: auto; }
   .picker-panel.open { display: block; }
-  .picker-item {
-    display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 8px;
-    cursor: pointer; font-size: 12px; transition: background 0.15s;
-  }
+  .picker-item { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; }
   .picker-item:hover { background: var(--surface3); }
   .picker-item img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; }
 
-  /* ═══════════ TEMPLATES ═══════════ */
   .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-  .template-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px; display: flex; gap: 12px;
-  }
+  .template-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; gap: 12px; position: relative; }
   .template-card img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; flex-shrink: 0; }
   .template-card .info { flex: 1; font-size: 12px; }
-  .template-card .info .t-name { font-weight: 600; color: var(--text); margin-bottom: 4px; }
-  .template-card .info .t-meta { color: var(--text-dim); font-size: 11px; }
-  .template-card .info .t-scores { display: flex; gap: 8px; margin-top: 6px; font-size: 10px; flex-wrap: wrap; }
-  .template-card .info .t-scores span { padding: 3px 6px; border-radius: 4px; background: var(--surface2); color: var(--text-dim); }
+  .template-card .t-name { font-weight: 600; margin-bottom: 4px; }
+  .template-card .t-meta { color: var(--text-dim); font-size: 11px; }
+  .template-card .t-scores { display: flex; gap: 8px; margin-top: 6px; font-size: 10px; flex-wrap: wrap; }
+  .template-card .t-scores span { padding: 3px 6px; border-radius: 4px; background: var(--surface2); color: var(--text-dim); }
+  .template-card .edit-btn { position: absolute; top: 10px; right: 10px; background: var(--surface3); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
-  .template-form {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 20px; max-width: 500px; margin-bottom: 20px;
-  }
+  .template-form { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 500px; margin-bottom: 20px; }
   .template-form h3 { font-size: 14px; color: var(--gold); margin-bottom: 14px; }
-  .template-form input, .template-form select {
-    width: 100%; padding: 10px 14px; margin-bottom: 8px; background: var(--surface2);
-    border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; outline: none;
-  }
-  .template-form input:focus, .template-form select:focus { border-color: var(--gold-border); }
+  .template-form input, .template-form select { width: 100%; padding: 10px 14px; margin-bottom: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; outline: none; }
   .template-form .form-row { display: flex; gap: 8px; }
   .template-form .form-row input, .template-form .form-row select { flex: 1; }
 
-  /* ═══════════ ANALYTICS ═══════════ */
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .chart-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 18px;
-  }
-  .chart-card h3 {
-    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 0.08em; margin-bottom: 12px; font-weight: 600;
-  }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .chart-card h3 { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; font-weight: 600; }
   .chart-card canvas { max-height: 180px; }
-
   .sessions-list { display: flex; flex-direction: column; gap: 8px; }
-  .session-row {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px; font-size: 13px;
-    display: flex; justify-content: space-between; align-items: center;
-    transition: background 0.15s; cursor: pointer;
-  }
+  .session-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   .session-row:hover { background: var(--surface2); }
   .session-row .sinfo { flex: 1; }
-  .session-row .sname { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .session-row .sname { font-weight: 600; }
   .session-row .smeta { font-size: 11px; color: var(--text-dim); }
-  .session-row .ssit { color: var(--text-dim); font-style: italic; margin-top: 4px; font-size: 12px; }
-  .session-row .saction { flex-shrink: 0; }
 
-  /* ═══════════ MODAL (wider conversation view) ═══════════ */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-    z-index: 1000; align-items: center; justify-content: center; padding: 20px;
-  }
+  /* Chat page */
+  .chat-layout { display: flex; height: 70vh; gap: 0; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); }
+  .chat-user-list { width: 280px; border-right: 1px solid var(--border); overflow-y: auto; padding: 8px; }
+  .chat-user-item { padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 2px; }
+  .chat-user-item:hover { background: var(--surface2); }
+  .chat-user-item.active { background: var(--gold-dim); }
+  .chat-user-item .name { font-weight: 600; }
+  .chat-user-item .preview { font-size: 11px; color: var(--text-dim); }
+  .chat-area { flex: 1; display: flex; flex-direction: column; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-bubble { max-width: 75%; padding: 8px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+  .chat-bubble.user { align-self: flex-end; background: var(--gold-dim); border: 1px solid var(--gold-border); }
+  .chat-bubble.admin { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); }
+  .chat-bubble img { max-width: 100%; border-radius: 8px; margin-top: 4px; }
+  .chat-input-area { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); align-items: flex-end; }
+  .chat-input-area textarea { flex: 1; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; outline: none; resize: none; max-height: 100px; font-family: inherit; }
+  .chat-input-area input[type="file"] { display: none; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
   .modal-overlay.open { display: flex; }
-  .modal-box {
-    background: var(--surface); border-radius: 18px; max-width: 640px; width: 100%;
-    max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .modal-header h3 { margin: 0; font-size: 14px; color: var(--text); }
+  .modal-box { background: var(--surface); border-radius: 18px; max-width: 500px; width: 100%; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { margin: 0; font-size: 14px; }
   .modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
-  .modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; max-height: 60vh; }
-  .msg-bubble {
-    max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px;
-    margin-bottom: 10px; line-height: 1.5; word-break: break-word;
-  }
-  .msg-bubble.user { background: rgba(199,155,69,0.12); border: 1px solid var(--gold-border); margin-left: auto; }
-  .msg-bubble.admin { background: var(--surface2); border: 1px solid var(--border); }
-  .msg-bubble img { max-width: 100%; border-radius: 8px; margin-top: 6px; }
-  .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+  .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
 
-  /* ═══════════ RESPONSIVE ═══════════ */
   @media (max-width: 768px) {
     body { flex-direction: column; }
     .sidebar { width: 100%; min-width: auto; flex-direction: row; padding: 12px; overflow-x: auto; }
-    .sidebar-brand { display: none; }
+    .sidebar-brand, .sidebar-footer { display: none; }
     .sidebar-nav { display: flex; gap: 4px; padding: 0; }
     .sidebar-nav button { width: auto; padding: 8px 12px; font-size: 11px; }
-    .sidebar-nav button .icon { display: none; }
-    .sidebar-footer { display: none; }
     .main { padding: 16px; }
-    .queue-grid { grid-template-columns: 1fr; }
-    .charts-grid { grid-template-columns: 1fr; }
-    .kpi-row { flex-wrap: wrap; }
-    .kpi-card { min-width: 100px; }
-    .modal-box { max-width: 100%; }
+    .queue-grid, .charts-grid { grid-template-columns: 1fr; }
+    .chat-layout { flex-direction: column; height: auto; }
+    .chat-user-list { width: 100%; max-height: 150px; }
   }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
-  <div class="sidebar-brand">
-    <div class="logo">TRIOFIT</div>
-    <div class="sub">Admin Panel</div>
-  </div>
+  <div class="sidebar-brand"><div class="logo">TRIOFIT</div><div class="sub">Admin Panel</div></div>
   <div class="sidebar-nav">
-    <button class="active" data-page="queue" onclick="showPage('queue')">
-      <span class="icon">●</span>Live Queue<span class="badge" id="queueBadge">0</span>
-    </button>
-    <button data-page="templates" onclick="showPage('templates')">
-      <span class="icon">▦</span>Templates
-    </button>
-    <button data-page="analytics" onclick="showPage('analytics')">
-      <span class="icon">▤</span>Analytics
-    </button>
+    <button class="active" data-page="queue" onclick="showPage('queue')"><span class="icon">●</span>Live Queue<span class="badge" id="queueBadge">0</span></button>
+    <button data-page="templates" onclick="showPage('templates')"><span class="icon">▦</span>Templates</button>
+    <button data-page="chat" onclick="showPage('chat')"><span class="icon">💬</span>Chat</button>
+    <button data-page="analytics" onclick="showPage('analytics')"><span class="icon">▤</span>Analytics</button>
   </div>
-  <div class="sidebar-footer">
-    <div class="dot"></div>System Live
-  </div>
+  <div class="sidebar-footer"><div class="dot"></div>System Live</div>
 </div>
 
-<!-- MAIN CONTENT -->
 <div class="main">
 
-  <!-- ═══════════ QUEUE PAGE ═══════════ -->
+  <!-- QUEUE PAGE -->
   <div class="page active" id="page-queue">
-    <div class="page-header">
-      <div>
-        <h2>Live Queue</h2>
-        <div class="subtitle" id="queueSubtitle">Users waiting for outfit recommendations</div>
-      </div>
-      <button class="btn-secondary" onclick="loadQueue()">Refresh</button>
-    </div>
-    <div class="kpi-row" id="queueKpiRow"></div>
+    <div class="page-header"><div><h2>Live Queue</h2><div class="subtitle" id="queueSubtitle">Loading…</div></div><button class="btn-secondary" onclick="loadQueue()">Refresh</button></div>
     <div class="toolbar">
-      <input class="search-box" id="searchBox" placeholder="Search by name or occasion…" oninput="renderQueue()">
+      <input class="search-box" id="searchBox" placeholder="Search…" oninput="renderQueue()">
       <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
-      <div class="filter-chip" data-filter="high" onclick="setFilter('high')">High confidence</div>
-      <div class="filter-chip" data-filter="low" onclick="setFilter('low')">Needs review</div>
-      <div class="filter-chip" data-filter="overridden" onclick="setFilter('overridden')">Overridden</div>
+      <div class="filter-chip" data-filter="high" onclick="setFilter('high')">High</div>
+      <div class="filter-chip" data-filter="low" onclick="setFilter('low')">Review</div>
     </div>
     <div class="queue-grid" id="queueGrid"></div>
-    <div class="empty" id="queueEmpty" style="display:none;">No pending requests. Great work — the queue is clear.</div>
+    <div id="queueEmpty" style="display:none;text-align:center;color:var(--text-muted);padding:30px;">Queue is clear. Great work.</div>
   </div>
 
-  <!-- ═══════════ TEMPLATES PAGE ═══════════ -->
+  <!-- TEMPLATES PAGE -->
   <div class="page" id="page-templates">
-    <div class="page-header">
-      <div>
-        <h2>Templates</h2>
-        <div class="subtitle" id="templateSubtitle">Manage your outfit library</div>
-      </div>
-      <button class="btn-primary" onclick="toggleTemplateForm()">+ Add template</button>
+    <div class="page-header"><div><h2>Templates</h2><div class="subtitle" id="templateSubtitle">Loading…</div></div><button class="btn-primary" onclick="openTemplateForm()">+ Add template</button></div>
+    <div class="template-form" id="templateForm" style="display:none;"><h3 id="templateFormTitle">New template</h3>
+      <input id="t-desc" placeholder="Description">
+      <div class="form-row"><select id="t-occasion"><option value="A professional interview">Interview</option><option value="An evening out">Evening out</option><option value="A wedding">Wedding</option><option value="Everyday office wear">Office</option><option value="A casual event">Casual</option></select><select id="t-gender"><option value="">Any</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+      <div class="form-row"><input id="t-style" placeholder="Style tag"><input id="t-image" placeholder="Image URL"></div>
+      <div class="form-row"><input id="t-conf" type="number" placeholder="Confidence" value="80"><input id="t-auth" type="number" placeholder="Authority" value="80"><input id="t-trust" type="number" placeholder="Trust" value="80"></div>
+      <div class="form-row"><input id="t-appr" type="number" placeholder="Approachability" value="75"><input id="t-fit" type="number" placeholder="Style fit" value="80"></div>
+      <input type="hidden" id="t-edit-id">
+      <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn-primary" onclick="saveTemplate()" style="flex:1;">Save</button><button class="btn-secondary" onclick="closeTemplateForm()">Cancel</button></div>
     </div>
-    <div class="template-form" id="templateForm" style="display:none;">
-      <h3>New template</h3>
-      <input id="t-desc" placeholder="Description (e.g. Navy blazer, white shirt, chinos)">
-      <div class="form-row">
-        <select id="t-occasion">
-          <option value="A professional interview">Interview</option>
-          <option value="An evening out">Evening out</option>
-          <option value="A wedding">Wedding</option>
-          <option value="Everyday office wear">Office wear</option>
-          <option value="A casual event">Casual event</option>
-        </select>
-        <select id="t-gender">
-          <option value="">Any gender</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <input id="t-style" placeholder="Style tag (e.g. Classic & elegant)">
-        <input id="t-image" placeholder="Image URL">
-      </div>
-      <div class="form-row">
-        <input id="t-conf" type="number" placeholder="Confidence" value="80">
-        <input id="t-auth" type="number" placeholder="Authority" value="80">
-        <input id="t-trust" type="number" placeholder="Trust" value="80">
-      </div>
-      <div class="form-row">
-        <input id="t-appr" type="number" placeholder="Approachability" value="75">
-        <input id="t-fit" type="number" placeholder="Style fit" value="80">
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn-primary" onclick="addTemplate()" style="flex:1;">Save template</button>
-        <button class="btn-secondary" onclick="toggleTemplateForm()">Cancel</button>
-      </div>
-    </div>
-    <div class="toolbar">
-      <input class="search-box" id="templateSearch" placeholder="Search templates…" oninput="renderTemplates()">
-    </div>
+    <div class="toolbar"><input class="search-box" id="templateSearch" placeholder="Search templates…" oninput="renderTemplates()"></div>
     <div class="template-grid" id="templateGrid"></div>
   </div>
 
-  <!-- ═══════════ ANALYTICS PAGE ═══════════ -->
-  <div class="page" id="page-analytics">
-    <div class="page-header">
-      <div>
-        <h2>Analytics</h2>
-        <div class="subtitle">Understand your users and performance</div>
+  <!-- CHAT PAGE (Wizard-of-Oz) -->
+  <div class="page" id="page-chat">
+    <div class="page-header"><div><h2>Chat</h2><div class="subtitle">Send messages and outfits to users</div></div></div>
+    <div class="chat-layout">
+      <div class="chat-user-list" id="chatUserList">Loading…</div>
+      <div class="chat-area" id="chatAreaPanel">
+        <div class="chat-messages" id="chatMessages"><div style="color:var(--text-muted);text-align:center;padding:30px;">Select a user to start chatting</div></div>
+        <div class="chat-input-area" id="chatInputArea" style="display:none;">
+          <input type="file" id="chatFileInput" accept="image/*" onchange="previewChatImage()">
+          <button class="btn-secondary" onclick="document.getElementById('chatFileInput').click()" title="Attach image">📎</button>
+          <textarea id="chatTextInput" rows="1" placeholder="Type a message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+          <button class="btn-primary" onclick="sendChatMessage()">Send</button>
+        </div>
+        <div id="chatImagePreview" style="display:none;padding:8px 16px;background:var(--surface2);border-top:1px solid var(--border);">
+          <img id="chatPreviewImg" style="max-height:60px;border-radius:6px;"><button class="btn-secondary" onclick="clearChatImage()" style="margin-left:8px;">✕</button>
+        </div>
       </div>
-      <button class="btn-secondary" onclick="loadAnalytics()">Refresh</button>
     </div>
+  </div>
+
+  <!-- ANALYTICS PAGE -->
+  <div class="page" id="page-analytics">
+    <div class="page-header"><div><h2>Analytics</h2><div class="subtitle">Understand your users</div></div><div style="display:flex;gap:8px;">
+      <button class="filter-chip active" data-range="all" onclick="setAnalyticsRange('all')">All time</button>
+      <button class="filter-chip" data-range="24h" onclick="setAnalyticsRange('24h')">24h</button>
+      <button class="filter-chip" data-range="7d" onclick="setAnalyticsRange('7d')">7 days</button>
+      <button class="filter-chip" data-range="30d" onclick="setAnalyticsRange('30d')">30 days</button>
+      <button class="btn-primary" onclick="downloadCSV()">⬇ CSV</button>
+    </div></div>
     <div class="kpi-row" id="analyticsKpiRow"></div>
     <div class="charts-grid">
       <div class="chart-card"><h3>Conversion funnel</h3><canvas id="funnelChart" height="130"></canvas></div>
@@ -417,261 +253,134 @@
       <div class="chart-card"><h3>Occasions</h3><canvas id="occasionChart" height="180"></canvas></div>
     </div>
     <div class="chart-card" style="margin-bottom:16px;"><h3>Styles</h3><canvas id="styleChart" height="100"></canvas></div>
-    <div class="chart-card">
-      <h3>Recent sessions</h3>
-      <div class="sessions-list" id="sessionsList"></div>
-    </div>
   </div>
 </div>
 
-<!-- CONVERSATION MODAL -->
-<div class="modal-overlay" id="convoModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h3 id="convoModalTitle">Conversation</h3>
-      <button class="modal-close" onclick="closeConvoModal()">✕</button>
-    </div>
-    <div class="modal-body" id="convoModalBody"></div>
+<!-- EDIT TEMPLATE MODAL (used by templates page) -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box"><div class="modal-header"><h3>Edit Template</h3><button class="modal-close" onclick="closeEditModal()">✕</button></div>
+    <div class="modal-body" id="editModalBody"></div>
   </div>
 </div>
 
 <script>
 const API = "https://triofitai-production.up.railway.app/api";
-const GOLD = '#C79B45';
-const GOLD_LIGHT = '#D9AE5A';
-// Distinct chart palette — no more all‑gold bars
-const BAR_COLORS = ['#5DCAA5','#4D8FD9','#D96B8C','#7F77DD','#38B2AC','#D85A30','#C79B45','#D9AE5A'];
-const DOUGHNUT_COLORS = ['#C79B45','#7F77DD','#5DCAA5','#D85A30','#4D8FD9','#D96B8C','#38B2AC','#D9AE5A','#8d6523'];
-let queueCache = [], allTemplatesCache = [], currentFilter = 'all', chartInstances = {};
+let queueCache=[], allTemplatesCache=[], currentFilter='all', chartInstances={}, analyticsRange='all', analyticsData=null;
+let chatSessionId=null, chatFile=null;
 
-// ── PAGE SWITCHING ──
-function showPage(page) {
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.getElementById('page-' + page).classList.add('active');
-  document.querySelectorAll('.sidebar-nav button').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelector('[data-page="' + page + '"]').classList.add('active');
-  if (page === 'queue') loadQueue();
-  if (page === 'templates') renderTemplates();
-  if (page === 'analytics') loadAnalytics();
-}
-
-// ── HELPERS ──
-function confidenceClass(c) { if (c >= 85) return 'high'; if (c >= 65) return 'mid'; return 'low'; }
-function formatDuration(s) {
-  if (!s) return '—';
-  if (s < 60) return s + 's';
-  return Math.floor(s/60) + 'm ' + (s%60) + 's';
+// ── NAVIGATION ──
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelector('[data-page="'+p+'"]').classList.add('active');
+  if(p==='queue') loadQueue();
+  if(p==='templates') loadTemplates();
+  if(p==='chat') loadChatUsers();
+  if(p==='analytics') loadAnalytics();
 }
 
 // ── QUEUE ──
-async function loadQueue() {
-  try {
-    const res = await fetch(API + '/admin/pending');
-    queueCache = await res.json();
-    allTemplatesCache = await fetch(API + '/templates').then(function(r) { return r.json(); }).catch(function() { return []; });
-  } catch(e) { console.error(e); }
-  document.getElementById('queueBadge').textContent = queueCache.length;
-  document.getElementById('queueSubtitle').textContent = queueCache.length + ' users waiting for recommendations';
-  renderQueue();
-}
-
-function setFilter(f) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.toggle('active', c.dataset.filter === f); });
-  renderQueue();
-}
-
-function renderQueue() {
-  const search = (document.getElementById('searchBox')?.value || '').toLowerCase();
-  const filtered = queueCache.filter(function(item) {
-    const name = ((item.sessions && item.sessions.name) || '').toLowerCase();
-    const conf = item.ai_confidence || 0;
-    if (search && name.indexOf(search) === -1) return false;
-    if (currentFilter === 'high' && conf < 85) return false;
-    if (currentFilter === 'low' && conf >= 65) return false;
-    if (currentFilter === 'overridden' && !item.was_overridden) return false;
-    return true;
-  });
-
-  document.getElementById('queueEmpty').style.display = filtered.length ? 'none' : 'block';
-
-  if (!filtered.length) {
-    document.getElementById('queueGrid').innerHTML = '';
-    return;
-  }
-
-  document.getElementById('queueEmpty').style.display = 'none';
-  document.getElementById('queueGrid').innerHTML = filtered.map(function(item) {
-    const sess = item.sessions || {};
-    const tmpl = item.outfit_templates;
-    const conf = item.ai_confidence || 0;
-    let html = '<div class="queue-card">';
-    html += '<div class="header"><div><div class="name">' + (sess.name || 'Unknown') + '</div>';
-    html += '<div class="meta-row"><span>🎯 ' + (sess.goal || '—') + '</span><span>👔 ' + (sess.style || '—') + '</span><span>📍 ' + (sess.occasion || '—') + '</span></div></div>';
-    html += '<div class="confidence-badge ' + confidenceClass(conf) + '">' + conf + '%</div></div>';
-    if (tmpl) {
-      html += '<div class="suggestion"><img src="' + tmpl.image_url + '" onerror="this.style.display=\'none\'"><div class="desc">' + tmpl.description + '</div></div>';
-      html += '<div class="actions">';
-      html += '<button class="btn-primary" onclick="sendSuggested(\'' + item.session_id + '\')">✓ Send suggested</button>';
-      html += '<button class="btn-secondary" onclick="togglePicker(\'' + item.session_id + '\')">↻ Choose different</button>';
-      html += '<button class="btn-view" onclick="viewConversation(\'' + item.session_id + '\')">👁 View chat</button>';
-      html += '</div>';
-      html += '<div class="picker-panel" id="picker-' + item.session_id + '">' +
-        allTemplatesCache.map(function(t) {
-          return '<div class="picker-item" onclick="sendOverride(\'' + item.session_id + '\',\'' + t.id + '\')">' +
-            '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'"><div>' + t.description + '</div></div>';
-        }).join('') + '</div>';
-    } else {
-      html += '<div class="empty" style="padding:12px;">No template matched — add one in the Templates tab.</div>';
-    }
-    html += '</div>';
-    return html;
+async function loadQueue(){queueCache=await fetch(API+'/admin/pending').then(r=>r.json()).catch(()=>[]);allTemplatesCache=await fetch(API+'/templates').then(r=>r.json()).catch(()=>[]);document.getElementById('queueBadge').textContent=queueCache.length;document.getElementById('queueSubtitle').textContent=queueCache.length+' waiting';renderQueue();}
+function setFilter(f){currentFilter=f;document.querySelectorAll('#page-queue .filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));renderQueue();}
+function renderQueue(){
+  const s=(document.getElementById('searchBox')?.value||'').toLowerCase();
+  const f=queueCache.filter(i=>{const n=((i.sessions?.name)||'').toLowerCase();const c=i.ai_confidence||0;if(s&&n.indexOf(s)===-1)return false;if(currentFilter==='high'&&c<85)return false;if(currentFilter==='low'&&c>=65)return false;return true;});
+  document.getElementById('queueEmpty').style.display=f.length?'none':'block';
+  document.getElementById('queueGrid').innerHTML=f.map(i=>{
+    const sess=i.sessions||{}; const tmpl=i.outfit_templates; const conf=i.ai_confidence||0;
+    let h='<div class="queue-card"><div class="header"><div><div class="name">'+(sess.name||'?')+'</div><div class="meta-row"><span>🎯'+(sess.goal||'—')+'</span><span>👔'+(sess.style||'—')+'</span><span>📍'+(sess.occasion||'—')+'</span></div></div><div class="confidence-badge '+((conf>=85)?'high':(conf>=65)?'mid':'low')+'">'+conf+'%</div></div>';
+    if(tmpl){h+='<div class="suggestion"><img src="'+tmpl.image_url+'" onerror="this.style.display=\'none\'"><div>'+tmpl.description+'</div></div><div class="actions"><button class="btn-primary" onclick="sendSuggested(\''+i.session_id+'\')">✓ Send</button><button class="btn-secondary" onclick="togglePicker(\''+i.session_id+'\')">↻ Change</button><button class="btn-view" onclick="openChatWith(\''+i.session_id+'\')">💬 Chat</button></div><div class="picker-panel" id="picker-'+i.session_id+'">'+allTemplatesCache.map(t=>'<div class="picker-item" onclick="sendOverride(\''+i.session_id+'\',\''+t.id+'\')"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div>'+t.description+'</div></div>').join('')+'</div>';}
+    else h+='<div style="padding:12px;color:var(--text-muted);">No template matched.</div>';
+    return h+'</div>';
   }).join('');
 }
-
-function togglePicker(sid) { document.getElementById('picker-' + sid).classList.toggle('open'); }
-
-async function sendSuggested(sid) {
-  await fetch(API + '/templates/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sid }) });
-  loadQueue();
-}
-
-async function sendOverride(sid, tid) {
-  await fetch(API + '/templates/override', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sid, template_id: tid }) });
-  loadQueue();
-}
+function togglePicker(id){document.getElementById('picker-'+id).classList.toggle('open');}
+async function sendSuggested(id){await fetch(API+'/templates/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id})});loadQueue();}
+async function sendOverride(id,tid){await fetch(API+'/templates/override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id,template_id:tid})});loadQueue();}
 
 // ── TEMPLATES ──
-function toggleTemplateForm() {
-  var f = document.getElementById('templateForm');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+async function loadTemplates(){allTemplatesCache=await fetch(API+'/templates').then(r=>r.json()).catch(()=>[]);renderTemplates();}
+function renderTemplates(){
+  const s=(document.getElementById('templateSearch')?.value||'').toLowerCase();
+  const f=allTemplatesCache.filter(t=>!s||(t.description||'').toLowerCase().indexOf(s)!==-1);
+  document.getElementById('templateSubtitle').textContent=f.length+' templates';
+  document.getElementById('templateGrid').innerHTML=f.map(t=>'<div class="template-card"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div class="info"><div class="t-name">'+t.description+'</div><div class="t-meta">'+(t.occasion||'')+' · '+(t.gender||'Any')+' · '+(t.style_tag||'')+'</div><div class="t-scores"><span>C:'+(t.base_confidence||0)+'</span><span>A:'+(t.base_authority||0)+'</span><span>T:'+(t.base_trust||0)+'</span><span>Ap:'+(t.base_approachability||0)+'</span></div></div><button class="edit-btn" onclick="editTemplate(\''+t.id+'\')">✎ Edit</button></div>').join('');
+}
+function openTemplateForm(){document.getElementById('templateForm').style.display='block';document.getElementById('templateFormTitle').textContent='New template';document.getElementById('t-edit-id').value='';document.getElementById('t-desc').value='';document.getElementById('t-image').value='';}
+function closeTemplateForm(){document.getElementById('templateForm').style.display='none';}
+function editTemplate(id){
+  const t=allTemplatesCache.find(x=>x.id==id); if(!t)return;
+  document.getElementById('templateForm').style.display='block';
+  document.getElementById('templateFormTitle').textContent='Edit template';
+  document.getElementById('t-edit-id').value=t.id;
+  document.getElementById('t-desc').value=t.description||'';
+  document.getElementById('t-occasion').value=t.occasion||'';
+  document.getElementById('t-gender').value=t.gender||'';
+  document.getElementById('t-style').value=t.style_tag||'';
+  document.getElementById('t-image').value=t.image_url||'';
+  document.getElementById('t-conf').value=t.base_confidence||80;
+  document.getElementById('t-auth').value=t.base_authority||80;
+  document.getElementById('t-trust').value=t.base_trust||80;
+  document.getElementById('t-appr').value=t.base_approachability||75;
+  document.getElementById('t-fit').value=t.base_style_fit||80;
+}
+async function saveTemplate(){
+  const body={description:document.getElementById('t-desc').value,occasion:document.getElementById('t-occasion').value,gender:document.getElementById('t-gender').value||null,style_tag:document.getElementById('t-style').value,image_url:document.getElementById('t-image').value,base_confidence:parseInt(document.getElementById('t-conf').value),base_authority:parseInt(document.getElementById('t-auth').value),base_trust:parseInt(document.getElementById('t-trust').value),base_approachability:parseInt(document.getElementById('t-appr').value),base_style_fit:parseInt(document.getElementById('t-fit').value)};
+  const editId=document.getElementById('t-edit-id').value;
+  if(editId){await fetch(API+'/templates/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+  else {await fetch(API+'/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+  closeTemplateForm(); loadTemplates();
 }
 
-function renderTemplates() {
-  var search = (document.getElementById('templateSearch')?.value || '').toLowerCase();
-  var filtered = allTemplatesCache.filter(function(t) {
-    return !search || (t.description || '').toLowerCase().indexOf(search) !== -1;
-  });
-  document.getElementById('templateSubtitle').textContent = filtered.length + ' templates in library';
-  document.getElementById('templateGrid').innerHTML = filtered.map(function(t) {
-    return '<div class="template-card">' +
-      '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'">' +
-      '<div class="info"><div class="t-name">' + t.description + '</div>' +
-      '<div class="t-meta">' + (t.occasion||'') + ' · ' + (t.gender||'Any') + ' · ' + (t.style_tag||'') + '</div>' +
-      '<div class="t-scores">' +
-        '<span>C:' + (t.base_confidence||0) + '</span><span>A:' + (t.base_authority||0) + '</span>' +
-        '<span>T:' + (t.base_trust||0) + '</span><span>Ap:' + (t.base_approachability||0) + '</span>' +
-      '</div></div></div>';
-  }).join('');
+// ── CHAT (Wizard-of-Oz) ──
+async function loadChatUsers(){
+  const res=await fetch(API+'/analytics/sessions').then(r=>r.json()).catch(()=>[]);
+  document.getElementById('chatUserList').innerHTML=res.map(s=>'<div class="chat-user-item" onclick="openChatWith(\''+s.session_id+'\')"><div class="name">'+(s.name||'?')+'</div><div class="preview">'+(s.goal||'')+' · '+(s.occasion||'')+'</div></div>').join('')||'<div style="color:var(--text-muted);padding:10px;">No users yet.</div>';
+}
+function openChatWith(sid){chatSessionId=sid;showPage('chat');loadChatUsers();loadChatMessages(sid);document.getElementById('chatInputArea').style.display='flex';}
+async function loadChatMessages(sid){
+  const res=await fetch(API+'/messages/'+sid).then(r=>r.json()).catch(()=>[]);
+  document.getElementById('chatMessages').innerHTML=res.map(m=>{
+    const img=m.image_url?'<img src="'+m.image_url+'">':'';
+    return '<div class="chat-bubble '+(m.sender==='user'?'user':'admin')+'">'+img+'<div>'+m.message+'</div></div>';
+  }).join('')||'<div style="color:var(--text-muted);text-align:center;">No messages yet.</div>';
+}
+function previewChatImage(){const f=document.getElementById('chatFileInput').files[0];if(!f)return;chatFile=f;const r=new FileReader();r.onload=function(e){document.getElementById('chatPreviewImg').src=e.target.result;document.getElementById('chatImagePreview').style.display='flex';};r.readAsDataURL(f);}
+function clearChatImage(){chatFile=null;document.getElementById('chatImagePreview').style.display='none';document.getElementById('chatFileInput').value='';}
+async function sendChatMessage(){
+  const text=document.getElementById('chatTextInput').value.trim();if(!text&&!chatFile)return;
+  if(chatFile){/* upload to storage then send message with image_url */ const form=new FormData();form.append('file',chatFile);const upRes=await fetch(API+'/upload',{method:'POST',body:form}).then(r=>r.json()).catch(()=>null);const imgUrl=upRes?.url||'';if(imgUrl){await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text||'🖼 Outfit',message_type:'image',image_url:imgUrl})});}clearChatImage();}
+  else if(text){await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text,message_type:'text'})});}
+  document.getElementById('chatTextInput').value='';loadChatMessages(chatSessionId);
 }
 
-async function addTemplate() {
-  var body = {
-    description: document.getElementById('t-desc').value,
-    occasion: document.getElementById('t-occasion').value,
-    gender: document.getElementById('t-gender').value || null,
-    style_tag: document.getElementById('t-style').value,
-    image_url: document.getElementById('t-image').value,
-    base_confidence: parseInt(document.getElementById('t-conf').value),
-    base_authority: parseInt(document.getElementById('t-auth').value),
-    base_trust: parseInt(document.getElementById('t-trust').value),
-    base_approachability: parseInt(document.getElementById('t-appr').value),
-    base_style_fit: parseInt(document.getElementById('t-fit').value)
-  };
-  await fetch(API + '/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  allTemplatesCache = await fetch(API + '/templates').then(function(r) { return r.json(); });
-  renderTemplates();
-  toggleTemplateForm();
+// ── ANALYTICS ──
+function setAnalyticsRange(r){analyticsRange=r;document.querySelectorAll('#page-analytics .filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.range===r));loadAnalytics();}
+function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+function renderBar(cid,counts,colors){destroyChart(cid);const entries=Object.entries(counts||{}).sort((a,b)=>b[1]-a[1]);const ctx=document.getElementById(cid).getContext('2d');chartInstances[cid]=new Chart(ctx,{type:'bar',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:colors||entries.map((_,i)=>['#5DCAA5','#4D8FD9','#D96B8C','#7F77DD','#38B2AC','#D85A30','#C79B45'][i%7]),borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#999'},grid:{display:false}},y:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}}}});}
+function renderDoughnut(cid,counts){destroyChart(cid);const entries=Object.entries(counts||{}).sort((a,b)=>b[1]-a[1]);const ctx=document.getElementById(cid).getContext('2d');chartInstances[cid]=new Chart(ctx,{type:'doughnut',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:entries.map((_,i)=>['#C79B45','#7F77DD','#5DCAA5','#D85A30','#4D8FD9','#D96B8C','#38B2AC'][i%7]),borderColor:'#0f0e12',borderWidth:2}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#ccc',font:{size:11}}}}}});}
+
+async function loadAnalytics(){
+  const res=await fetch(API+'/analytics/overview?range='+analyticsRange);analyticsData=await res.json();
+  document.getElementById('analyticsKpiRow').innerHTML=[{l:'Sessions',v:analyticsData.funnel.totalSessionsStarted},{l:'Analysis',v:analyticsData.funnel.sessionsThatReachedAnalysis},{l:'Outfits',v:analyticsData.funnel.outfitsSent},{l:'Pending',v:analyticsData.funnel.currentlyPending}].map(k=>'<div class="kpi-card"><div class="label">'+k.l+'</div><div class="value">'+k.v+'</div></div>').join('');
+  destroyChart('funnelChart');const ctx=document.getElementById('funnelChart').getContext('2d');chartInstances['funnelChart']=new Chart(ctx,{type:'bar',data:{labels:['Started','Analysis','Outfits'],datasets:[{data:[analyticsData.funnel.totalSessionsStarted,analyticsData.funnel.sessionsThatReachedAnalysis,analyticsData.funnel.outfitsSent],backgroundColor:['#5DCAA5','#4D8FD9','#7F77DD'],borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#ccc'},grid:{display:false}}}});
+  renderBar('hourChart',analyticsData.hourCounts);
+  renderDoughnut('goalChart',analyticsData.goalCounts);
+  renderDoughnut('occasionChart',analyticsData.occasionCounts);
+  renderBar('styleChart',analyticsData.styleCounts);
 }
 
-// ── ANALYTICS (with diverse colors) ──
-function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
-
-function renderBar(canvasId, counts) {
-  destroyChart(canvasId);
-  var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
-  var ctx = document.getElementById(canvasId).getContext('2d');
-  // assign a different colour to each bar
-  var colors = entries.map(function(_, i) { return BAR_COLORS[i % BAR_COLORS.length]; });
-  chartInstances[canvasId] = new Chart(ctx, {
-    type:'bar', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: colors, borderRadius:6, maxBarThickness:36 }] },
-    options:{ plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', font:{ size:11 } }, grid:{ display:false } }, y:{ ticks:{ color:'#999', font:{ size:11 }, precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } } } }
-  });
+function downloadCSV(){
+  if(!analyticsData||!analyticsData.sessions){alert('No data loaded.');return;}
+  const rows=analyticsData.sessions.map(s=>[s.name||'',s.goal||'',s.occasion||'',s.style||'',s.is_pro?'Yes':'No',s.created_at||''].join(','));
+  const csv='Name,Goal,Occasion,Style,Pro,Created\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='triofit-analytics-'+analyticsRange+'.csv';a.click();
 }
-
-function renderDoughnut(canvasId, counts) {
-  destroyChart(canvasId);
-  var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
-  var ctx = document.getElementById(canvasId).getContext('2d');
-  var colors = entries.map(function(_, i) { return DOUGHNUT_COLORS[i % DOUGHNUT_COLORS.length]; });
-  chartInstances[canvasId] = new Chart(ctx, {
-    type:'doughnut', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: colors, borderColor:'#0f0e12', borderWidth:2 }] },
-    options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#ccc', font:{ size:11 }, padding:12 } } } }
-  });
-}
-
-async function loadAnalytics() {
-  var res = await fetch(API + '/analytics/overview');
-  var data = await res.json();
-
-  document.getElementById('analyticsKpiRow').innerHTML = [
-    { label:'Sessions', value: data.funnel.totalSessionsStarted },
-    { label:'Reached analysis', value: data.funnel.sessionsThatReachedAnalysis },
-    { label:'Outfits sent', value: data.funnel.outfitsSent },
-    { label:'Pending', value: data.funnel.currentlyPending },
-    { label:'Avg session', value: formatDuration(data.avgDurationSeconds) }
-  ].map(function(k) { return '<div class="kpi-card"><div class="label">'+k.label+'</div><div class="value">'+k.value+'</div></div>'; }).join('');
-
-  // Funnel with distinct colors
-  destroyChart('funnelChart');
-  var ctx = document.getElementById('funnelChart').getContext('2d');
-  chartInstances['funnelChart'] = new Chart(ctx, {
-    type:'bar', data:{ labels:['Started','Analysis','Outfits sent'], datasets:[{ data:[data.funnel.totalSessionsStarted, data.funnel.sessionsThatReachedAnalysis, data.funnel.outfitsSent], backgroundColor:['#5DCAA5','#4D8FD9','#7F77DD'], borderRadius:6 }] },
-    options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } }, y:{ ticks:{ color:'#ccc' }, grid:{ display:false } } } }
-  });
-
-  renderBar('hourChart', data.hourCounts || {});
-  renderDoughnut('goalChart', data.goalCounts || {});
-  renderDoughnut('occasionChart', data.occasionCounts || {});
-  renderBar('styleChart', data.styleCounts || {});
-
-  // Sessions list
-  var sessRes = await fetch(API + '/analytics/sessions');
-  var sessions = await sessRes.json();
-  document.getElementById('sessionsList').innerHTML = sessions.length ? sessions.map(function(s) {
-    return '<div class="session-row" onclick="viewConversation(\'' + s.session_id + '\')">' +
-      '<div class="sinfo"><div class="sname">' + (s.name||'Unknown') + '</div>' +
-      '<div class="smeta">' + (s.goal||'') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
-      '<div class="ssit">' + (s.situation ? '"'+s.situation+'"' : '') + '</div></div>' +
-      '<div class="saction"><button class="' + (s.is_pro?'btn-primary':'btn-secondary') + '" style="font-size:11px;" onclick="event.stopPropagation();togglePro(\'' + s.session_id + '\',' + (!s.is_pro) + ')">' + (s.is_pro?'Pro':'Make Pro') + '</button></div></div>';
-  }).join('') : '<div class="empty">No sessions yet.</div>';
-}
-
-async function togglePro(sid, status) {
-  await fetch(API + '/session/' + sid + '/pro-status', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_pro: status }) });
-  loadAnalytics();
-}
-
-// ── CONVERSATION MODAL ──
-async function viewConversation(sid) {
-  var res = await fetch(API + '/analytics/session/' + sid + '/conversation');
-  var data = await res.json();
-  document.getElementById('convoModalTitle').textContent = (data.session && data.session.name) || 'Conversation';
-  var body = document.getElementById('convoModalBody');
-  body.innerHTML = data.messages.length ? data.messages.map(function(m) {
-    var img = (m.message_type==='image' && m.image_url) ? '<img src="'+m.image_url+'">' : '';
-    return '<div class="msg-bubble '+(m.sender==='user'?'user':'admin')+'">'+img+'<div>'+m.message+'</div><div class="msg-time">'+new Date(m.created_at).toLocaleTimeString()+'</div></div>';
-  }).join('') : '<div class="empty">No messages.</div>';
-  document.getElementById('convoModal').classList.add('open');
-}
-
-function closeConvoModal() { document.getElementById('convoModal').classList.remove('open'); }
-document.getElementById('convoModal').addEventListener('click', function(e) { if (e.target.id==='convoModal') closeConvoModal(); });
 
 // ── INIT ──
-loadQueue();
-loadAnalytics();
-setInterval(function() { loadQueue(); }, 8000);
+loadQueue();loadTemplates();
+setInterval(loadQueue,8000);
 </script>
 </body>
 </html>
