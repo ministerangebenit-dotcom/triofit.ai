@@ -2,225 +2,430 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TRIOFIT Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIOFIT · Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; }
+  :root {
+    --bg: #08080a;
+    --surface: #0f0e12;
+    --surface2: #16151a;
+    --surface3: #1c1b20;
+    --gold: #C79B45;
+    --gold-light: #D9AE5A;
+    --gold-dim: rgba(199,155,69,0.08);
+    --gold-border: rgba(199,155,69,0.2);
+    --text: #eee;
+    --text-dim: #888;
+    --text-muted: #555;
+    --border: rgba(255,255,255,0.06);
+    --green: #5DCAA5;
+    --red: #D85A30;
+    --purple: #7F77DD;
+    --font-display: Georgia, 'Times New Roman', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0d0c0f;
-    color: #eee;
-    margin: 0;
-    padding: 32px;
-    background-image: radial-gradient(circle at 20% 0%, rgba(199,155,69,0.04), transparent 40%);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
   }
-  h1 { font-family: Georgia, serif; font-size: 22px; color: #E9C275; margin: 0 0 4px; letter-spacing: 0.01em; }
-  .greeting { font-size: 13px; color: #888; margin-bottom: 24px; }
 
-  .kpi-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+  /* ═══════════ SIDEBAR ═══════════ */
+  .sidebar {
+    width: 240px; min-width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 20px 0;
+  }
+  .sidebar-brand {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-brand .logo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.03em;
+  }
+  .sidebar-brand .sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+  .sidebar-nav { flex: 1; padding: 0 12px; }
+  .sidebar-nav button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: transparent; border: none; color: var(--text-dim);
+    font-size: 13px; cursor: pointer; text-align: left;
+    margin-bottom: 2px; transition: all 0.15s;
+  }
+  .sidebar-nav button:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-nav button.active { background: var(--gold-dim); color: var(--gold); font-weight: 600; }
+  .sidebar-nav button .icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-nav button .badge {
+    margin-left: auto; background: var(--gold);
+    color: #0a0a0a; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .sidebar-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar-footer .dot {
+    width: 7px; height: 7px; background: var(--green);
+    border-radius: 50%; animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ═══════════ MAIN ═══════════ */
+  .main {
+    flex: 1; overflow-y: auto; padding: 24px 32px;
+    background: var(--bg);
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 24px;
+  }
+  .page-header h2 {
+    font-family: var(--font-display);
+    font-size: 20px; color: var(--text); letter-spacing: 0.02em;
+  }
+  .page-header .subtitle {
+    font-size: 12px; color: var(--text-dim); margin-top: 4px;
+  }
+
+  /* ═══════════ KPI ROW ═══════════ */
+  .kpi-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
   .kpi-card {
-    background: linear-gradient(145deg, #1a191d, #151417);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 18px;
-    padding: 18px 22px;
-    min-width: 140px;
-    flex: 1;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 20px; flex: 1; min-width: 130px;
+    transition: border-color 0.2s;
   }
-  .kpi-card .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .kpi-card .value { font-size: 28px; font-weight: 700; color: #E9C275; font-family: Georgia, serif; }
+  .kpi-card:hover { border-color: var(--gold-border); }
+  .kpi-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .kpi-card .value { font-size: 26px; font-weight: 700; color: var(--gold); font-family: var(--font-display); }
+  .kpi-card .trend { font-size: 11px; margin-top: 4px; }
+  .kpi-card .trend.up { color: var(--green); }
+  .kpi-card .trend.down { color: var(--red); }
 
-  .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-  .tabs button {
-    background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #999;
-    padding: 9px 18px; border-radius: 20px; font-size: 13px; cursor: pointer;
-  }
-  .tabs button.active { background: #C79B45; color: #0a0a0a; border: none; font-weight: 600; }
-
-  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  /* ═══════════ QUEUE ═══════════ */
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
   .search-box {
-    flex: 1; min-width: 200px; padding: 10px 16px; background: #1a191d;
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #eee; font-size: 13px;
+    flex: 1; min-width: 180px; padding: 9px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 13px; outline: none;
   }
+  .search-box:focus { border-color: var(--gold-border); }
+  .search-box::placeholder { color: var(--text-muted); }
   .filter-chip {
-    padding: 7px 14px; border-radius: 16px; font-size: 12px; cursor: pointer;
-    background: #1a191d; border: 1px solid rgba(255,255,255,0.08); color: #999;
+    padding: 7px 13px; border-radius: 16px; font-size: 11px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    transition: all 0.15s;
   }
-  .filter-chip.active { background: rgba(199,155,69,0.15); border-color: #C79B45; color: #C79B45; }
+  .filter-chip.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .filter-chip:hover { border-color: var(--gold-border); }
 
-  .queue-item {
-    background: linear-gradient(145deg, #1a191d, #151417);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 18px; padding: 20px; margin-bottom: 16px;
+  /* ═══════════ QUEUE ITEMS ═══════════ */
+  .queue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+  .queue-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 20px;
+    transition: border-color 0.2s;
   }
-  .queue-item .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .queue-item .name { font-size: 16px; font-weight: 600; color: #fff; }
-  .queue-item .meta { font-size: 12px; color: #888; margin-top: 3px; }
+  .queue-card:hover { border-color: var(--gold-border); }
+  .queue-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .queue-card .name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .queue-card .meta-row { font-size: 11px; color: var(--text-dim); margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .queue-card .meta-row span { display: flex; align-items: center; gap: 4px; }
 
-  .confidence-ring {
-    display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 5px 12px;
-    border-radius: 20px; font-weight: 600;
+  .confidence-badge {
+    padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
   }
-  .confidence-ring.high { background: rgba(93,202,165,0.12); color: #5DCAA5; }
-  .confidence-ring.mid { background: rgba(199,155,69,0.12); color: #C79B45; }
-  .confidence-ring.low { background: rgba(216,90,48,0.12); color: #D85A30; }
+  .confidence-badge.high { background: rgba(93,202,165,0.1); color: var(--green); }
+  .confidence-badge.mid { background: rgba(199,155,69,0.1); color: var(--gold); }
+  .confidence-badge.low { background: rgba(216,90,48,0.1); color: var(--red); }
 
-  .suggestion {
-    display: flex; gap: 14px; align-items: center; margin-top: 14px;
-    background: #0f0e11; padding: 12px; border-radius: 14px;
+  .queue-card .suggestion {
+    display: flex; gap: 10px; align-items: center; margin-top: 12px;
+    background: var(--surface2); padding: 10px; border-radius: 10px;
   }
-  .suggestion img { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; }
-  .suggestion-desc { font-size: 13px; flex: 1; color: #ddd; }
+  .queue-card .suggestion img {
+    width: 56px; height: 56px; object-fit: cover; border-radius: 8px; flex-shrink: 0;
+  }
+  .queue-card .suggestion .desc { font-size: 12px; color: var(--text); flex: 1; line-height: 1.5; }
 
-  .action-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-  button.primary { background: #C79B45; border: none; color: #0a0a0a; font-weight: 700; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 13px; }
-  button.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: #ccc; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+  .queue-card .actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  button {
+    font-family: inherit; cursor: pointer; transition: all 0.15s;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary {
+    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    background: var(--gold); border: none; color: #0a0a0a;
+  }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-secondary {
+    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .btn-secondary:hover { border-color: var(--gold-border); color: var(--text); }
+  .btn-view {
+    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    background: transparent; border: 1px solid var(--border); color: var(--purple);
+  }
+  .btn-view:hover { border-color: var(--purple); }
 
-  .picker { display: none; margin-top: 14px; background: #0f0e11; border-radius: 12px; padding: 10px; max-height: 260px; overflow-y: auto; }
-  .picker.open { display: block; }
-  .picker-item { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; }
-  .picker-item:hover { background: #1a191d; }
-  .picker-item img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+  .picker-panel {
+    display: none; margin-top: 10px; background: var(--surface2);
+    border-radius: 10px; padding: 8px; max-height: 200px; overflow-y: auto;
+  }
+  .picker-panel.open { display: block; }
+  .picker-item {
+    display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 8px;
+    cursor: pointer; font-size: 12px; transition: background 0.15s;
+  }
+  .picker-item:hover { background: var(--surface3); }
+  .picker-item img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; }
+
+  /* ═══════════ TEMPLATES ═══════════ */
+  .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .template-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; display: flex; gap: 12px;
+  }
+  .template-card img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; flex-shrink: 0; }
+  .template-card .info { flex: 1; font-size: 12px; }
+  .template-card .info .t-name { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .template-card .info .t-meta { color: var(--text-dim); font-size: 11px; }
+  .template-card .info .t-scores { display: flex; gap: 8px; margin-top: 6px; font-size: 10px; flex-wrap: wrap; }
+  .template-card .info .t-scores span { padding: 3px 6px; border-radius: 4px; background: var(--surface2); color: var(--text-dim); }
 
   .template-form {
-    background: linear-gradient(145deg, #1a191d, #151417);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 18px; padding: 22px; max-width: 480px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; max-width: 500px; margin-bottom: 20px;
   }
+  .template-form h3 { font-size: 14px; color: var(--gold); margin-bottom: 14px; }
   .template-form input, .template-form select {
-    width: 100%; padding: 10px 14px; margin-bottom: 10px; background: #0f0e11;
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #eee; font-size: 13px;
+    width: 100%; padding: 10px 14px; margin-bottom: 8px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; outline: none;
   }
-  .row { display: flex; gap: 10px; }
+  .template-form input:focus, .template-form select:focus { border-color: var(--gold-border); }
+  .template-form .form-row { display: flex; gap: 8px; }
+  .template-form .form-row input, .template-form .form-row select { flex: 1; }
 
-  .empty { color: #555; font-size: 13px; padding: 30px 0; text-align: center; }
-
-  .breakdown {
-    background: linear-gradient(145deg, #1a191d, #151417);
-    border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 20px; margin-bottom: 16px;
+  /* ═══════════ ANALYTICS ═══════════ */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px;
   }
-  .breakdown h3 { font-size: 12px; color: #999; margin: 0 0 14px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .chart-card h3 {
+    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 12px; font-weight: 600;
+  }
+  .chart-card canvas { max-height: 180px; }
 
+  .sessions-list { display: flex; flex-direction: column; gap: 8px; }
   .session-row {
-    background: #0f0e11; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px;
-    padding: 14px 16px; margin-bottom: 10px; font-size: 13px; cursor: pointer;
-    transition: background 0.15s;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.15s; cursor: pointer;
   }
-  .session-row:hover { background: #16151a; }
-  .session-row .meta { color: #888; font-size: 11px; margin-bottom: 6px; }
-  .session-row .sit { color: #ddd; line-height: 1.6; font-style: italic; }
-  .session-row .view-link { color: #C79B45; font-size: 11px; margin-top: 8px; display: inline-block; }
+  .session-row:hover { background: var(--surface2); }
+  .session-row .sinfo { flex: 1; }
+  .session-row .sname { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .session-row .smeta { font-size: 11px; color: var(--text-dim); }
+  .session-row .ssit { color: var(--text-dim); font-style: italic; margin-top: 4px; font-size: 12px; }
+  .session-row .saction { flex-shrink: 0; }
 
+  /* ═══════════ MODAL ═══════════ */
   .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
     z-index: 1000; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal-box {
-    background: #151417; border-radius: 20px; max-width: 560px; width: 100%;
-    max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--surface); border-radius: 18px; max-width: 560px; width: 100%;
+    max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid var(--border);
   }
-  .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
-  .modal-header h3 { margin: 0; font-size: 15px; color: #fff; }
-  .modal-close { background: transparent; border: none; color: #888; font-size: 20px; cursor: pointer; }
-  .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-  .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
-  .msg-bubble.user { background: rgba(199,155,69,0.1); border: 1px solid rgba(199,155,69,0.2); margin-left: auto; }
-  .msg-bubble.admin { background: #0f0e11; border: 1px solid rgba(255,255,255,0.04); }
+  .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { margin: 0; font-size: 14px; color: var(--text); }
+  .modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
+  .modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; max-height: 55vh; }
+  .msg-bubble {
+    max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13px;
+    margin-bottom: 8px; line-height: 1.5; word-break: break-word;
+  }
+  .msg-bubble.user { background: var(--gold-dim); border: 1px solid var(--gold-border); margin-left: auto; }
+  .msg-bubble.admin { background: var(--surface2); border: 1px solid var(--border); }
   .msg-bubble img { max-width: 100%; border-radius: 8px; margin-top: 6px; }
-  .msg-time { font-size: 10px; color: #666; margin-top: 4px; }
+  .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ═══════════ RESPONSIVE ═══════════ */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; min-width: auto; flex-direction: row; padding: 12px; overflow-x: auto; }
+    .sidebar-brand { display: none; }
+    .sidebar-nav { display: flex; gap: 4px; padding: 0; }
+    .sidebar-nav button { width: auto; padding: 8px 12px; font-size: 11px; }
+    .sidebar-nav button .icon { display: none; }
+    .sidebar-footer { display: none; }
+    .main { padding: 16px; }
+    .queue-grid { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .kpi-row { flex-wrap: wrap; }
+    .kpi-card { min-width: 100px; }
+  }
 </style>
 </head>
 <body>
 
-<h1>TRIOFIT — Admin</h1>
-<div class="greeting" id="greeting">Loading…</div>
-
-<div class="kpi-row" id="kpiRow"></div>
-
-<div class="tabs">
-  <button id="tabQueue" class="active" onclick="showTab('queue')">Live Queue</button>
-  <button id="tabTemplates" onclick="showTab('templates')">Templates</button>
-  <button id="tabAnalytics" onclick="showTab('analytics')">Analytics</button>
-</div>
-
-<div id="queueView">
-  <div class="toolbar">
-    <input class="search-box" id="searchBox" placeholder="Search by name…" oninput="renderQueue()">
-    <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
-    <div class="filter-chip" data-filter="high" onclick="setFilter('high')">High confidence</div>
-    <div class="filter-chip" data-filter="low" onclick="setFilter('low')">Needs review</div>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">TRIOFIT</div>
+    <div class="sub">Admin Panel</div>
   </div>
-  <div id="queueList" class="empty">Loading…</div>
-</div>
-
-<div id="templatesView" style="display:none;">
-  <div class="template-form">
-    <input id="t-desc" placeholder="Description">
-    <div class="row">
-      <select id="t-occasion">
-        <option value="A professional interview">Interview</option>
-        <option value="An evening out">Evening out</option>
-        <option value="A wedding">Wedding</option>
-        <option value="Everyday office wear">Office wear</option>
-        <option value="A casual event">Casual event</option>
-      </select>
-      <select id="t-gender">
-        <option value="">Any</option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-      </select>
-    </div>
-    <input id="t-style" placeholder="Style tag">
-    <input id="t-image" placeholder="Image URL">
-    <div class="row">
-      <input id="t-conf" type="number" placeholder="Confidence" value="80">
-      <input id="t-auth" type="number" placeholder="Authority" value="80">
-    </div>
-    <div class="row">
-      <input id="t-trust" type="number" placeholder="Trust" value="80">
-      <input id="t-appr" type="number" placeholder="Approachability" value="75">
-    </div>
-    <input id="t-fit" type="number" placeholder="Style fit" value="80">
-    <button class="primary" onclick="addTemplate()">Save template</button>
+  <div class="sidebar-nav">
+    <button class="active" data-page="queue" onclick="showPage('queue')">
+      <span class="icon">●</span>Live Queue<span class="badge" id="queueBadge">0</span>
+    </button>
+    <button data-page="templates" onclick="showPage('templates')">
+      <span class="icon">▦</span>Templates
+    </button>
+    <button data-page="analytics" onclick="showPage('analytics')">
+      <span class="icon">▤</span>Analytics
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="dot"></div>System Live
   </div>
 </div>
 
-<div id="analyticsView" style="display:none;">
-  <div class="breakdown">
-    <h3>Conversion funnel</h3>
-    <canvas id="funnelChart" height="90"></canvas>
-  </div>
-  <div class="breakdown">
-    <h3>Usage by hour of day</h3>
-    <canvas id="hourChart" height="90"></canvas>
-  </div>
-  <div class="row" style="gap: 16px; align-items: flex-start;">
-    <div class="breakdown" style="flex: 1;">
-      <h3>Goals</h3>
-      <canvas id="goalChart" height="180"></canvas>
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- ═══════════ QUEUE PAGE ═══════════ -->
+  <div class="page active" id="page-queue">
+    <div class="page-header">
+      <div>
+        <h2>Live Queue</h2>
+        <div class="subtitle" id="queueSubtitle">Users waiting for outfit recommendations</div>
+      </div>
+      <button class="btn-secondary" onclick="loadQueue()">Refresh</button>
     </div>
-    <div class="breakdown" style="flex: 1;">
-      <h3>Occasions</h3>
-      <canvas id="occasionChart" height="180"></canvas>
+    <div class="kpi-row" id="queueKpiRow"></div>
+    <div class="toolbar">
+      <input class="search-box" id="searchBox" placeholder="Search by name or occasion…" oninput="renderQueue()">
+      <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
+      <div class="filter-chip" data-filter="high" onclick="setFilter('high')">High confidence</div>
+      <div class="filter-chip" data-filter="low" onclick="setFilter('low')">Needs review</div>
+      <div class="filter-chip" data-filter="overridden" onclick="setFilter('overridden')">Overridden</div>
     </div>
+    <div class="queue-grid" id="queueGrid"></div>
+    <div class="empty" id="queueEmpty" style="display:none;">No pending requests. Great work — the queue is clear.</div>
   </div>
-  <div class="breakdown">
-    <h3>Styles</h3>
-    <canvas id="styleChart" height="100"></canvas>
+
+  <!-- ═══════════ TEMPLATES PAGE ═══════════ -->
+  <div class="page" id="page-templates">
+    <div class="page-header">
+      <div>
+        <h2>Templates</h2>
+        <div class="subtitle" id="templateSubtitle">Manage your outfit library</div>
+      </div>
+      <button class="btn-primary" onclick="toggleTemplateForm()">+ Add template</button>
+    </div>
+    <div class="template-form" id="templateForm" style="display:none;">
+      <h3>New template</h3>
+      <input id="t-desc" placeholder="Description (e.g. Navy blazer, white shirt, chinos)">
+      <div class="form-row">
+        <select id="t-occasion">
+          <option value="A professional interview">Interview</option>
+          <option value="An evening out">Evening out</option>
+          <option value="A wedding">Wedding</option>
+          <option value="Everyday office wear">Office wear</option>
+          <option value="A casual event">Casual event</option>
+        </select>
+        <select id="t-gender">
+          <option value="">Any gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input id="t-style" placeholder="Style tag (e.g. Classic & elegant)">
+        <input id="t-image" placeholder="Image URL">
+      </div>
+      <div class="form-row">
+        <input id="t-conf" type="number" placeholder="Confidence" value="80">
+        <input id="t-auth" type="number" placeholder="Authority" value="80">
+        <input id="t-trust" type="number" placeholder="Trust" value="80">
+      </div>
+      <div class="form-row">
+        <input id="t-appr" type="number" placeholder="Approachability" value="75">
+        <input id="t-fit" type="number" placeholder="Style fit" value="80">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn-primary" onclick="addTemplate()" style="flex:1;">Save template</button>
+        <button class="btn-secondary" onclick="toggleTemplateForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" id="templateSearch" placeholder="Search templates…" oninput="renderTemplates()">
+    </div>
+    <div class="template-grid" id="templateGrid"></div>
   </div>
-  <div class="breakdown">
-    <h3>Recent sessions — click to view full conversation</h3>
-    <div id="sessionsList" class="empty">Loading…</div>
+
+  <!-- ═══════════ ANALYTICS PAGE ═══════════ -->
+  <div class="page" id="page-analytics">
+    <div class="page-header">
+      <div>
+        <h2>Analytics</h2>
+        <div class="subtitle">Understand your users and performance</div>
+      </div>
+      <button class="btn-secondary" onclick="loadAnalytics()">Refresh</button>
+    </div>
+    <div class="kpi-row" id="analyticsKpiRow"></div>
+    <div class="charts-grid">
+      <div class="chart-card"><h3>Conversion funnel</h3><canvas id="funnelChart" height="130"></canvas></div>
+      <div class="chart-card"><h3>Usage by hour</h3><canvas id="hourChart" height="130"></canvas></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><h3>Goals</h3><canvas id="goalChart" height="180"></canvas></div>
+      <div class="chart-card"><h3>Occasions</h3><canvas id="occasionChart" height="180"></canvas></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:16px;"><h3>Styles</h3><canvas id="styleChart" height="100"></canvas></div>
+    <div class="chart-card">
+      <h3>Recent sessions</h3>
+      <div class="sessions-list" id="sessionsList"></div>
+    </div>
   </div>
 </div>
 
+<!-- CONVERSATION MODAL -->
 <div class="modal-overlay" id="convoModal">
   <div class="modal-box">
     <div class="modal-header">
       <h3 id="convoModalTitle">Conversation</h3>
-      <button class="modal-close" onclick="closeConvoModal()">Close</button>
+      <button class="modal-close" onclick="closeConvoModal()">✕</button>
     </div>
     <div class="modal-body" id="convoModalBody"></div>
   </div>
@@ -228,169 +433,135 @@
 
 <script>
 const API = "https://triofitai-production.up.railway.app/api";
-let allTemplatesCache = [];
-let queueCache = [];
-let currentFilter = 'all';
-let chartInstances = {};
-
 const GOLD = '#C79B45';
 const GOLD_LIGHT = '#D9AE5A';
-const CHART_COLORS = ['#C79B45', '#D9AE5A', '#7F77DD', '#5DCAA5', '#D85A30', '#E9C275', '#8d6523'];
+const CHART_COLORS = ['#C79B45','#D9AE5A','#7F77DD','#5DCAA5','#D85A30','#E9C275','#8d6523'];
+let queueCache = [], allTemplatesCache = [], currentFilter = 'all', chartInstances = {};
 
-function showTab(tab) {
-  document.getElementById('queueView').style.display = tab === 'queue' ? 'block' : 'none';
-  document.getElementById('templatesView').style.display = tab === 'templates' ? 'block' : 'none';
-  document.getElementById('analyticsView').style.display = tab === 'analytics' ? 'block' : 'none';
-  document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
-  document.getElementById('tabTemplates').classList.toggle('active', tab === 'templates');
-  document.getElementById('tabAnalytics').classList.toggle('active', tab === 'analytics');
-  if (tab === 'queue') loadQueue();
-  if (tab === 'analytics') loadAnalytics();
+// ── PAGE SWITCHING ──
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav button').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('[data-page="' + page + '"]').classList.add('active');
+  if (page === 'queue') loadQueue();
+  if (page === 'templates') renderTemplates();
+  if (page === 'analytics') loadAnalytics();
+}
+
+// ── HELPERS ──
+function confidenceClass(c) { if (c >= 85) return 'high'; if (c >= 65) return 'mid'; return 'low'; }
+function formatDuration(s) {
+  if (!s) return '—';
+  if (s < 60) return s + 's';
+  return Math.floor(s/60) + 'm ' + (s%60) + 's';
+}
+
+// ── QUEUE ──
+async function loadQueue() {
+  try {
+    const res = await fetch(API + '/admin/pending');
+    queueCache = await res.json();
+    allTemplatesCache = await fetch(API + '/templates').then(function(r) { return r.json(); }).catch(function() { return []; });
+  } catch(e) { console.error(e); }
+  document.getElementById('queueBadge').textContent = queueCache.length;
+  document.getElementById('queueSubtitle').textContent = queueCache.length + ' users waiting for recommendations';
+  renderQueue();
 }
 
 function setFilter(f) {
   currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(function(c) {
-    c.classList.toggle('active', c.dataset.filter === f);
-  });
-  renderQueue();
-}
-
-function confidenceClass(c) {
-  if (c >= 85) return 'high';
-  if (c >= 65) return 'mid';
-  return 'low';
-}
-
-function greetingTime() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning, Kevin.';
-  if (h < 18) return 'Good afternoon, Kevin.';
-  return 'Good evening, Kevin.';
-}
-
-function formatDuration(seconds) {
-  if (seconds === null || seconds === undefined) return '—';
-  if (seconds < 60) return seconds + 's';
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return mins + 'm ' + secs + 's';
-}
-
-async function loadKpis() {
-  document.getElementById('greeting').textContent = greetingTime();
-  let analyticsRes = null;
-  let correctionsRes = null;
-  try {
-    analyticsRes = await fetch(API + '/analytics/overview').then(function(r) { return r.json(); });
-  } catch (e) {}
-  try {
-    correctionsRes = await fetch(API + '/admin/corrections').then(function(r) { return r.json(); });
-  } catch (e) {}
-
-  if (!analyticsRes || !correctionsRes) return;
-
-  const kpis = [
-    { label: 'Sessions', value: analyticsRes.funnel.totalSessionsStarted },
-    { label: 'Outfits sent', value: analyticsRes.funnel.outfitsSent },
-    { label: 'AI accuracy', value: correctionsRes.stats.accuracy !== null ? correctionsRes.stats.accuracy + '%' : '—' },
-    { label: 'Avg session time', value: formatDuration(analyticsRes.avgDurationSeconds) },
-    { label: 'Needs review', value: analyticsRes.funnel.currentlyPending }
-  ];
-
-  document.getElementById('kpiRow').innerHTML = kpis.map(function(k) {
-    return '<div class="kpi-card"><div class="label">' + k.label + '</div><div class="value">' + k.value + '</div></div>';
-  }).join('');
-}
-
-async function loadQueue() {
-  const res = await fetch(API + '/admin/pending');
-  queueCache = await res.json();
-  let allTemplates = [];
-  try {
-    allTemplates = await fetch(API + '/templates').then(function(r) { return r.json(); });
-  } catch (e) {}
-  allTemplatesCache = allTemplates || [];
+  document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.toggle('active', c.dataset.filter === f); });
   renderQueue();
 }
 
 function renderQueue() {
-  const searchBox = document.getElementById('searchBox');
-  const searchTerm = searchBox ? searchBox.value.toLowerCase() : '';
-
+  const search = (document.getElementById('searchBox')?.value || '').toLowerCase();
   const filtered = queueCache.filter(function(item) {
-    const name = (item.sessions && item.sessions.name ? item.sessions.name : '').toLowerCase();
-    if (searchTerm && name.indexOf(searchTerm) === -1) return false;
-    if (currentFilter === 'high' && (item.ai_confidence || 0) < 85) return false;
-    if (currentFilter === 'low' && (item.ai_confidence || 0) >= 65) return false;
+    const name = ((item.sessions && item.sessions.name) || '').toLowerCase();
+    const conf = item.ai_confidence || 0;
+    if (search && name.indexOf(search) === -1) return false;
+    if (currentFilter === 'high' && conf < 85) return false;
+    if (currentFilter === 'low' && conf >= 65) return false;
+    if (currentFilter === 'overridden' && !item.was_overridden) return false;
     return true;
   });
 
-  const list = document.getElementById('queueList');
+  document.getElementById('queueGrid').innerHTML = filtered.length ? '' : '';
+  document.getElementById('queueEmpty').style.display = filtered.length ? 'none' : 'block';
+
   if (!filtered.length) {
-    list.className = 'empty';
-    list.innerHTML = 'No one waiting for review right now.';
+    document.getElementById('queueGrid').innerHTML = '';
     return;
   }
 
-  list.className = '';
-  list.innerHTML = filtered.map(function(item) {
+  document.getElementById('queueEmpty').style.display = 'none';
+  document.getElementById('queueGrid').innerHTML = filtered.map(function(item) {
     const sess = item.sessions || {};
     const tmpl = item.outfit_templates;
-    let html = '<div class="queue-item">';
-    html += '<div class="top-row"><div><div class="name">' + (sess.name || 'Unknown') + '</div>';
-    html += '<div class="meta">' + (sess.occasion || '') + ' · goal: ' + (sess.goal || '') + ' · style: ' + (sess.style || '') + '</div></div>';
-    html += '<div class="confidence-ring ' + confidenceClass(item.ai_confidence || 0) + '">' + (item.ai_confidence != null ? item.ai_confidence : '?') + '%</div></div>';
-
+    const conf = item.ai_confidence || 0;
+    let html = '<div class="queue-card">';
+    html += '<div class="header"><div><div class="name">' + (sess.name || 'Unknown') + '</div>';
+    html += '<div class="meta-row"><span>🎯 ' + (sess.goal || '—') + '</span><span>👔 ' + (sess.style || '—') + '</span><span>📍 ' + (sess.occasion || '—') + '</span></div></div>';
+    html += '<div class="confidence-badge ' + confidenceClass(conf) + '">' + conf + '%</div></div>';
     if (tmpl) {
-      html += '<div class="suggestion"><img src="' + tmpl.image_url + '" onerror="this.style.display=\'none\'">';
-      html += '<div class="suggestion-desc">' + tmpl.description + '</div></div>';
-      html += '<div class="action-row">';
-      html += '<button class="primary" onclick="sendSuggested(\'' + item.session_id + '\')">Send suggested</button>';
-      html += '<button class="secondary" onclick="togglePicker(\'' + item.session_id + '\')">Choose different</button>';
-      html += '<button class="secondary" onclick="viewConversation(\'' + item.session_id + '\')">View chat</button>';
+      html += '<div class="suggestion"><img src="' + tmpl.image_url + '" onerror="this.style.display=\'none\'"><div class="desc">' + tmpl.description + '</div></div>';
+      html += '<div class="actions">';
+      html += '<button class="btn-primary" onclick="sendSuggested(\'' + item.session_id + '\')">✓ Send suggested</button>';
+      html += '<button class="btn-secondary" onclick="togglePicker(\'' + item.session_id + '\')">↻ Choose different</button>';
+      html += '<button class="btn-view" onclick="viewConversation(\'' + item.session_id + '\')">👁 View chat</button>';
       html += '</div>';
-      html += '<div class="picker" id="picker-' + item.session_id + '">';
-      html += allTemplatesCache.map(function(t) {
-        return '<div class="picker-item" onclick="sendOverride(\'' + item.session_id + '\', \'' + t.id + '\')">' +
-          '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'"><div>' + t.description + '</div></div>';
-      }).join('');
-      html += '</div>';
+      html += '<div class="picker-panel" id="picker-' + item.session_id + '">' +
+        allTemplatesCache.map(function(t) {
+          return '<div class="picker-item" onclick="sendOverride(\'' + item.session_id + '\',\'' + t.id + '\')">' +
+            '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'"><div>' + t.description + '</div></div>';
+        }).join('') + '</div>';
     } else {
-      html += '<div class="empty">No suggestion matched — add a template.</div>';
+      html += '<div class="empty" style="padding:12px;">No template matched — add one in the Templates tab.</div>';
     }
-
     html += '</div>';
     return html;
   }).join('');
 }
 
-function togglePicker(sessionId) {
-  document.getElementById('picker-' + sessionId).classList.toggle('open');
+function togglePicker(sid) { document.getElementById('picker-' + sid).classList.toggle('open'); }
+
+async function sendSuggested(sid) {
+  await fetch(API + '/templates/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sid }) });
+  loadQueue();
 }
 
-async function sendSuggested(sessionId) {
-  await fetch(API + '/templates/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId })
-  });
+async function sendOverride(sid, tid) {
+  await fetch(API + '/templates/override', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sid, template_id: tid }) });
   loadQueue();
-  loadKpis();
 }
 
-async function sendOverride(sessionId, templateId) {
-  await fetch(API + '/templates/override', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, template_id: templateId })
+// ── TEMPLATES ──
+function toggleTemplateForm() {
+  var f = document.getElementById('templateForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderTemplates() {
+  var search = (document.getElementById('templateSearch')?.value || '').toLowerCase();
+  var filtered = allTemplatesCache.filter(function(t) {
+    return !search || (t.description || '').toLowerCase().indexOf(search) !== -1;
   });
-  loadQueue();
-  loadKpis();
+  document.getElementById('templateSubtitle').textContent = filtered.length + ' templates in library';
+  document.getElementById('templateGrid').innerHTML = filtered.map(function(t) {
+    return '<div class="template-card">' +
+      '<img src="' + t.image_url + '" onerror="this.style.display=\'none\'">' +
+      '<div class="info"><div class="t-name">' + t.description + '</div>' +
+      '<div class="t-meta">' + (t.occasion||'') + ' · ' + (t.gender||'Any') + ' · ' + (t.style_tag||'') + '</div>' +
+      '<div class="t-scores">' +
+        '<span>C:' + (t.base_confidence||0) + '</span><span>A:' + (t.base_authority||0) + '</span>' +
+        '<span>T:' + (t.base_trust||0) + '</span><span>Ap:' + (t.base_approachability||0) + '</span>' +
+      '</div></div></div>';
+  }).join('');
 }
 
 async function addTemplate() {
-  const body = {
+  var body = {
     description: document.getElementById('t-desc').value,
     occasion: document.getElementById('t-occasion').value,
     gender: document.getElementById('t-gender').value || null,
@@ -402,177 +573,97 @@ async function addTemplate() {
     base_approachability: parseInt(document.getElementById('t-appr').value),
     base_style_fit: parseInt(document.getElementById('t-fit').value)
   };
-  await fetch(API + '/templates', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  alert('Template saved.');
-  document.getElementById('t-desc').value = '';
-  document.getElementById('t-image').value = '';
+  await fetch(API + '/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  allTemplatesCache = await fetch(API + '/templates').then(function(r) { return r.json(); });
+  renderTemplates();
+  toggleTemplateForm();
 }
 
-function destroyChart(id) {
-  if (chartInstances[id]) {
-    chartInstances[id].destroy();
-    delete chartInstances[id];
-  }
-}
+// ── ANALYTICS ──
+function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
-function renderBarChart(canvasId, counts) {
+function renderBar(canvasId, counts) {
   destroyChart(canvasId);
-  const entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
-  const ctx = document.getElementById(canvasId).getContext('2d');
+  var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
+  var ctx = document.getElementById(canvasId).getContext('2d');
   chartInstances[canvasId] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: entries.map(function(e) { return e[0]; }),
-      datasets: [{
-        data: entries.map(function(e) { return e[1]; }),
-        backgroundColor: GOLD,
-        borderRadius: 6,
-        maxBarThickness: 36
-      }]
-    },
-    options: {
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#999', font: { size: 11 } }, grid: { display: false } },
-        y: { ticks: { color: '#999', font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
-      }
-    }
+    type:'bar', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: GOLD, borderRadius:6, maxBarThickness:36 }] },
+    options:{ plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', font:{ size:11 } }, grid:{ display:false } }, y:{ ticks:{ color:'#999', font:{ size:11 }, precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } } } }
   });
 }
 
-function renderPieChart(canvasId, counts) {
+function renderDoughnut(canvasId, counts) {
   destroyChart(canvasId);
-  const entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
-  const ctx = document.getElementById(canvasId).getContext('2d');
+  var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
+  var ctx = document.getElementById(canvasId).getContext('2d');
   chartInstances[canvasId] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: entries.map(function(e) { return e[0]; }),
-      datasets: [{
-        data: entries.map(function(e) { return e[1]; }),
-        backgroundColor: CHART_COLORS,
-        borderColor: '#151417',
-        borderWidth: 2
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#ccc', font: { size: 11 }, padding: 12 } }
-      }
-    }
-  });
-}
-
-function renderFunnelChart(funnel) {
-  destroyChart('funnelChart');
-  const labels = ['Sessions started', 'Reached analysis', 'Outfits sent'];
-  const values = [funnel.totalSessionsStarted, funnel.sessionsThatReachedAnalysis, funnel.outfitsSent];
-  const ctx = document.getElementById('funnelChart').getContext('2d');
-  chartInstances['funnelChart'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: values,
-        backgroundColor: [GOLD, GOLD_LIGHT, '#5DCAA5'],
-        borderRadius: 6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#999', font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        y: { ticks: { color: '#ccc', font: { size: 12 } }, grid: { display: false } }
-      }
-    }
+    type:'doughnut', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: CHART_COLORS, borderColor:'#0f0e12', borderWidth:2 }] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#ccc', font:{ size:11 }, padding:12 } } } }
   });
 }
 
 async function loadAnalytics() {
-  const res = await fetch(API + '/analytics/overview');
-  const data = await res.json();
+  var res = await fetch(API + '/analytics/overview');
+  var data = await res.json();
 
-  renderFunnelChart(data.funnel);
-  renderBarChart('hourChart', data.hourCounts);
-  renderPieChart('goalChart', data.goalCounts);
-  renderPieChart('occasionChart', data.occasionCounts);
-  renderBarChart('styleChart', data.styleCounts);
+  document.getElementById('analyticsKpiRow').innerHTML = [
+    { label:'Sessions', value: data.funnel.totalSessionsStarted },
+    { label:'Reached analysis', value: data.funnel.sessionsThatReachedAnalysis },
+    { label:'Outfits sent', value: data.funnel.outfitsSent },
+    { label:'Pending', value: data.funnel.currentlyPending },
+    { label:'Avg session', value: formatDuration(data.avgDurationSeconds) }
+  ].map(function(k) { return '<div class="kpi-card"><div class="label">'+k.label+'</div><div class="value">'+k.value+'</div></div>'; }).join('');
 
-  const sessRes = await fetch(API + '/analytics/sessions');
-  const sessions = await sessRes.json();
-  const list = document.getElementById('sessionsList');
+  // Funnel
+  destroyChart('funnelChart');
+  var ctx = document.getElementById('funnelChart').getContext('2d');
+  chartInstances['funnelChart'] = new Chart(ctx, {
+    type:'bar', data:{ labels:['Started','Analysis','Outfits sent'], datasets:[{ data:[data.funnel.totalSessionsStarted, data.funnel.sessionsThatReachedAnalysis, data.funnel.outfitsSent], backgroundColor:[GOLD, GOLD_LIGHT,'#5DCAA5'], borderRadius:6 }] },
+    options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } }, y:{ ticks:{ color:'#ccc' }, grid:{ display:false } } } }
+  });
 
-  if (!sessions.length) {
-    list.className = 'empty';
-    list.innerHTML = 'No sessions recorded yet.';
-    return;
-  }
+  renderBar('hourChart', data.hourCounts || {});
+  renderDoughnut('goalChart', data.goalCounts || {});
+  renderDoughnut('occasionChart', data.occasionCounts || {});
+  renderBar('styleChart', data.styleCounts || {});
 
-  list.className = '';
-  list.innerHTML = sessions.map(function(s) {
-    const sitHtml = s.situation ? ('<div class="sit">"' + s.situation + '"</div>') : '<div class="sit">No situation text recorded.</div>';
-    const proLabel = s.is_pro ? 'Pro' : 'Make Pro';
-    const proClass = s.is_pro ? 'primary' : 'secondary';
-    return '<div class="session-row">' +
-      '<div onclick="viewConversation(\'' + s.session_id + '\')">' +
-      '<div class="meta">' + (s.name || 'Unknown') + ' · ' + (s.goal || '') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
-      sitHtml +
-      '<div class="view-link">View full conversation -></div></div>' +
-      '<button class="' + proClass + '" style="margin-top:8px;" onclick="event.stopPropagation(); toggleProStatus(\'' + s.session_id + '\', ' + (!s.is_pro) + ')">' + proLabel + '</button>' +
-      '</div>';
-  }).join('');
+  // Sessions list
+  var sessRes = await fetch(API + '/analytics/sessions');
+  var sessions = await sessRes.json();
+  document.getElementById('sessionsList').innerHTML = sessions.length ? sessions.map(function(s) {
+    return '<div class="session-row" onclick="viewConversation(\'' + s.session_id + '\')">' +
+      '<div class="sinfo"><div class="sname">' + (s.name||'Unknown') + '</div>' +
+      '<div class="smeta">' + (s.goal||'') + ' · ' + new Date(s.created_at).toLocaleString() + '</div>' +
+      '<div class="ssit">' + (s.situation ? '"'+s.situation+'"' : '') + '</div></div>' +
+      '<div class="saction"><button class="' + (s.is_pro?'btn-primary':'btn-secondary') + '" style="font-size:11px;" onclick="event.stopPropagation();togglePro(\'' + s.session_id + '\',' + (!s.is_pro) + ')">' + (s.is_pro?'Pro':'Make Pro') + '</button></div></div>';
+  }).join('') : '<div class="empty">No sessions yet.</div>';
 }
 
-async function toggleProStatus(sessionId, newStatus) {
-  await fetch(API + '/session/' + sessionId + '/pro-status', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ is_pro: newStatus })
-  });
+async function togglePro(sid, status) {
+  await fetch(API + '/session/' + sid + '/pro-status', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_pro: status }) });
   loadAnalytics();
 }
 
-async function viewConversation(sessionId) {
-  const res = await fetch(API + '/analytics/session/' + sessionId + '/conversation');
-  const data = await res.json();
-
+// ── CONVERSATION MODAL ──
+async function viewConversation(sid) {
+  var res = await fetch(API + '/analytics/session/' + sid + '/conversation');
+  var data = await res.json();
   document.getElementById('convoModalTitle').textContent = (data.session && data.session.name) || 'Conversation';
-  const body = document.getElementById('convoModalBody');
-
-  if (!data.messages.length) {
-    body.innerHTML = '<div class="empty">No messages recorded for this session.</div>';
-  } else {
-    body.innerHTML = data.messages.map(function(m) {
-      const imgHtml = (m.message_type === 'image' && m.image_url) ? ('<img src="' + m.image_url + '">') : '';
-      return '<div class="msg-bubble ' + (m.sender === 'user' ? 'user' : 'admin') + '">' +
-        imgHtml +
-        '<div>' + m.message + '</div>' +
-        '<div class="msg-time">' + new Date(m.created_at).toLocaleTimeString() + '</div></div>';
-    }).join('');
-  }
-
+  var body = document.getElementById('convoModalBody');
+  body.innerHTML = data.messages.length ? data.messages.map(function(m) {
+    var img = (m.message_type==='image' && m.image_url) ? '<img src="'+m.image_url+'">' : '';
+    return '<div class="msg-bubble '+(m.sender==='user'?'user':'admin')+'">'+img+'<div>'+m.message+'</div><div class="msg-time">'+new Date(m.created_at).toLocaleTimeString()+'</div></div>';
+  }).join('') : '<div class="empty">No messages.</div>';
   document.getElementById('convoModal').classList.add('open');
 }
 
-function closeConvoModal() {
-  document.getElementById('convoModal').classList.remove('open');
-}
+function closeConvoModal() { document.getElementById('convoModal').classList.remove('open'); }
+document.getElementById('convoModal').addEventListener('click', function(e) { if (e.target.id==='convoModal') closeConvoModal(); });
 
-document.getElementById('convoModal').addEventListener('click', function(e) {
-  if (e.target.id === 'convoModal') closeConvoModal();
-});
-
+// ── INIT ──
 loadQueue();
-loadKpis();
-setInterval(function() {
-  loadQueue();
-  loadKpis();
-}, 5000);
+loadAnalytics();
+setInterval(function() { loadQueue(); }, 8000);
 </script>
 </body>
 </html>
