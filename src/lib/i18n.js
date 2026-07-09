@@ -44,20 +44,6 @@ export const translations = {
       "Finalizing your perception profile…",
     ],
 
-    // add to en object:
-proTag: "TRIOFIT PRO",
-proPitch: "Unlimited perception analyses per day, verified outfit recommendations, and priority styling — for people who want their image managed, not guessed at.",
-proUpgradeButton: "Upgrade to Pro",
-limitReached: "You've used your free analysis for today. Come back tomorrow, or upgrade to Pro for unlimited access.",
-reanalyzeButton: "Analyze again",
-
-// add to fr object:
-proTag: "TRIOFIT PRO",
-proPitch: "Analyses de perception illimitées par jour, recommandations de tenues vérifiées, et stylisme prioritaire — pour ceux qui veulent gérer leur image, pas la deviner.",
-proUpgradeButton: "Passer à Pro",
-limitReached: "Vous avez utilisé votre analyse gratuite du jour. Revenez demain, ou passez à Pro pour un accès illimité.",
-reanalyzeButton: "Analyser à nouveau",
-
     revealImpression: "Impression",
     revealReasons: "Reasons",
     revealPrediction: "Prediction",
@@ -81,6 +67,15 @@ reanalyzeButton: "Analyser à nouveau",
     traitTrust: "Trustworthiness",
     traitApproachability: "Approachability",
     traitStyleFit: "Style fit",
+
+    proTag: "TRIOFIT PRO",
+    proPitch: "Unlimited perception analyses per day, verified outfit recommendations, and priority styling — for people who want their image managed, not guessed at.",
+    proUpgradeButton: "Upgrade to Pro",
+    limitReached: "You've used your free analysis for today. Come back tomorrow, or upgrade to Pro for unlimited access.",
+    reanalyzeButton: "Analyze again",
+    contactStylistAlert: "Contact your stylist directly to upgrade to Pro.",
+    voiceNotSupported: "Voice input isn't supported in this browser.",
+    backLabel: "Back",
   },
 
   fr: {
@@ -128,20 +123,6 @@ reanalyzeButton: "Analyser à nouveau",
       "Finalisation de votre profil de perception…",
     ],
 
-    // add to en object:
-proTag: "TRIOFIT PRO",
-proPitch: "Unlimited perception analyses per day, verified outfit recommendations, and priority styling — for people who want their image managed, not guessed at.",
-proUpgradeButton: "Upgrade to Pro",
-limitReached: "You've used your free analysis for today. Come back tomorrow, or upgrade to Pro for unlimited access.",
-reanalyzeButton: "Analyze again",
-
-// add to fr object:
-proTag: "TRIOFIT PRO",
-proPitch: "Analyses de perception illimitées par jour, recommandations de tenues vérifiées, et stylisme prioritaire — pour ceux qui veulent gérer leur image, pas la deviner.",
-proUpgradeButton: "Passer à Pro",
-limitReached: "Vous avez utilisé votre analyse gratuite du jour. Revenez demain, ou passez à Pro pour un accès illimité.",
-reanalyzeButton: "Analyser à nouveau",
-
     revealImpression: "Impression",
     revealReasons: "Raisons",
     revealPrediction: "Prédiction",
@@ -165,6 +146,15 @@ reanalyzeButton: "Analyser à nouveau",
     traitTrust: "Fiabilité",
     traitApproachability: "Accessibilité",
     traitStyleFit: "Adéquation du style",
+
+    proTag: "TRIOFIT PRO",
+    proPitch: "Analyses de perception illimitées par jour, recommandations de tenues vérifiées, et stylisme prioritaire — pour ceux qui veulent gérer leur image, pas la deviner.",
+    proUpgradeButton: "Passer à Pro",
+    limitReached: "Vous avez utilisé votre analyse gratuite du jour. Revenez demain, ou passez à Pro pour un accès illimité.",
+    reanalyzeButton: "Analyser à nouveau",
+    contactStylistAlert: "Contactez directement votre styliste pour passer à Pro.",
+    voiceNotSupported: "La saisie vocale n'est pas prise en charge sur ce navigateur.",
+    backLabel: "Retour",
   },
 };
 
