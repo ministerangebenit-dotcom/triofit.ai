@@ -20,6 +20,12 @@ export default function Landing() {
     return () => clearTimeout(timer);
   }, []);
 
+  function handleBegin() {
+    const existingName = localStorage.getItem("tf_name");
+    const existingGoal = localStorage.getItem("tf_goal");
+    navigate(existingName && existingGoal ? "/conversation" : "/name");
+  }
+
   return (
     <div className="relative h-screen overflow-hidden flex flex-col justify-center items-center px-8" style={{ background: "var(--bg)" }}>
       <LangToggle lang={lang} onChange={setLangState} />
@@ -50,7 +56,7 @@ export default function Landing() {
         </motion.p>
 
         <motion.button
-          onClick={() => navigate("/name")}
+          onClick={handleBegin}
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           style={{
