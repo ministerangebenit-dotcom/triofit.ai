@@ -357,24 +357,167 @@ function MessageActions({ text }) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
 
-  function copyText() { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  function copyText() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   function playVoice() {
     if (!("speechSynthesis" in window)) return;
-    if (playing) { window.speechSynthesis.cancel(); setPlaying(false); return; }
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
     const utter = new SpeechSynthesisUtterance(text);
     utter.onend = () => setPlaying(false);
     setPlaying(true);
     window.speechSynthesis.speak(utter);
   }
-  const iconBtn = { background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4, fontSize: 14 };
+
+  function sendFeedback() {
+    if (!feedback.trim()) return;
+    axios
+      .post(`${BACKEND}/messages`, {
+        session_id: sessionId,
+        sender: "user",
+        message: `[FEEDBACK] ${feedback}`,
+        message_type: "text",
+      })
+      .then(() => {
+        setFeedbackSent(true);
+        setFeedback("");
+        setTimeout(() => {
+          setShowFeedback(false);
+          setFeedbackSent(false);
+        }, 1500);
+      })
+      .catch(() => {
+        setFeedbackSent(true);
+        setTimeout(() => {
+          setShowFeedback(false);
+          setFeedbackSent(false);
+        }, 1500);
+      });
+  }
+
+  const iconBtn = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-dim)",
+    display: "flex",
+    alignItems: "center",
+    padding: 4,
+    fontSize: 14,
+  };
 
   return (
-    <div style={{ display: "flex", gap: 10, marginTop: 6, marginLeft: 2 }}>
-      <button onClick={copyText} style={iconBtn} aria-label="Copy"><i className={copied ? "ti ti-check" : "ti ti-copy"} style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={playVoice} style={iconBtn} aria-label="Play"><i className={playing ? "ti ti-player-pause" : "ti ti-player-play"} style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={() => setLiked(liked === "up" ? null : "up")} style={iconBtn} aria-label="Like"><i className="ti ti-thumb-up" style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }} /></button>
-      <button onClick={() => setLiked(liked === "down" ? null : "down")} style={iconBtn} aria-label="Dislike"><i className="ti ti-thumb-down" style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }} /></button>
+    <div style={{ marginTop: 6, marginLeft: 2 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={copyText} style={iconBtn} aria-label="Copy">
+          <i
+            className={copied ? "ti ti-check" : "ti ti-copy"}
+            style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }}
+          />
+        </button>
+        <button onClick={playVoice} style={iconBtn} aria-label="Play">
+          <i
+            className={playing ? "ti ti-player-pause" : "ti ti-player-play"}
+            style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }}
+          />
+        </button>
+        <button
+          onClick={() => setLiked(liked === "up" ? null : "up")}
+          style={iconBtn}
+          aria-label="Like"
+        >
+          <i
+            className="ti ti-thumb-up"
+            style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }}
+          />
+        </button>
+        <button
+          onClick={() => setLiked(liked === "down" ? null : "down")}
+          style={iconBtn}
+          aria-label="Dislike"
+        >
+          <i
+            className="ti ti-thumb-down"
+            style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }}
+          />
+        </button>
+        {/* Feedback button */}
+        <button
+          onClick={() => setShowFeedback(!showFeedback)}
+          style={iconBtn}
+          aria-label="Feedback"
+        >
+          <i
+            className="ti ti-message"
+            style={{ color: showFeedback ? "var(--gold)" : "var(--text-dim)" }}
+          />
+        </button>
+      </div>
+
+      {showFeedback && (
+        <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+          <input
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendFeedback();
+            }}
+            placeholder="Quick feedback..."
+            disabled={feedbackSent}
+            style={{
+              flex: 1,
+              background: "var(--surface)",
+              border: "1px solid var(--border-soft)",
+              borderRadius: 20,
+              padding: "6px 14px",
+              fontSize: 12,
+              color: "var(--text)",
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={sendFeedback}
+            disabled={!feedback.trim() || feedbackSent}
+            style={{
+              background: feedback.trim() ? "var(--gold)" : "var(--surface-2)",
+              border: "none",
+              borderRadius: "50%",
+              width: 28,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: feedback.trim() ? "pointer" : "default",
+              flexShrink: 0,
+            }}
+            aria-label="Send feedback"
+          >
+            <i
+              className="ti ti-arrow-up"
+              style={{
+                fontSize: 14,
+                color: feedback.trim() ? "#080808" : "var(--text-dim)",
+              }}
+            />
+          </button>
+        </div>
+      )}
+      {feedbackSent && (
+        <div style={{ fontSize: 11, color: "var(--gold)", marginTop: 4 }}>
+          ✓ Thanks!
+        </div>
+      )}
     </div>
   );
 }
@@ -411,26 +554,22 @@ export default function Conversation() {
   const [proOpen, setProOpen] = useState(false);
   const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
 
-  // Rating modal state
   const [ratingType, setRatingType] = useState(null);
   const [outfitReceived, setOutfitReceived] = useState(false);
   const sessionCount = useRef(parseInt(localStorage.getItem("tf_session_count") || "0", 10));
 
-  // Timer ref for delayed analysis rating
   const analysisRatingTimer = useRef(null);
 
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
 
-  // Increment session counter on mount
   useEffect(() => {
     const count = sessionCount.current + 1;
     sessionCount.current = count;
     localStorage.setItem("tf_session_count", String(count));
   }, []);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (analysisRatingTimer.current) clearTimeout(analysisRatingTimer.current);
@@ -487,7 +626,6 @@ export default function Conversation() {
         const m = payload.new;
         if (m.session_id !== sessionId || m.sender !== "admin") return;
 
-        // Detect image arrival
         if (m.message_type === "image") {
           setOutfitReceived(true);
           setTimeout(() => setRatingType("outfit"), 2500);
@@ -517,7 +655,6 @@ export default function Conversation() {
     setSituation(text);
     pushUser(text);
 
-    // ★ Save the user's situation/intake message to Supabase
     await axios.post(`${BACKEND}/messages`, {
       session_id: sessionId,
       sender: "user",
@@ -564,11 +701,9 @@ export default function Conversation() {
       setAwaitingRevealChoice(true);
       setStage("post-history");
 
-      // ★ Delayed analysis rating: 60 seconds after analysis appears
       if (analysisRatingTimer.current) clearTimeout(analysisRatingTimer.current);
       analysisRatingTimer.current = setTimeout(() => setRatingType("analysis"), 60000);
 
-      // Show ProModal every 3rd session
       if (sessionCount.current >= 3) {
         setTimeout(() => setProOpen(true), 3500);
       }
@@ -589,7 +724,6 @@ export default function Conversation() {
     setExtracted(null);
     setPrefetchedRefineQs(null);
     setAwaitingRevealChoice(false);
-    // Clear the rating timer if they reanalyze before it fires
     if (analysisRatingTimer.current) {
       clearTimeout(analysisRatingTimer.current);
       analysisRatingTimer.current = null;
@@ -719,125 +853,128 @@ export default function Conversation() {
       <ThemeToggle />
       <LangToggle lang={lang} onChange={setLangState} />
       <ChatBackground />
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
-        <AnimatePresence>
-          {messages.map((m, i) => {
-            if (m.type === "analysis" && m.analysis) {
-              const isLast = i === messages.length - 1;
+
+      {/* Centered chat container */}
+      <div style={{ maxWidth: 720, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
+          <AnimatePresence>
+            {messages.map((m, i) => {
+              if (m.type === "analysis" && m.analysis) {
+                const isLast = i === messages.length - 1;
+                return (
+                  <div key={i}>
+                    <AnalysisMessage
+                      s={s}
+                      analysis={m.analysis}
+                      onChoice={onRevealChoice}
+                      showChoices={isLast && awaitingRevealChoice}
+                    />
+                  </div>
+                );
+              }
               return (
-                <div key={i}>
-                  <AnalysisMessage
-                    s={s}
-                    analysis={m.analysis}
-                    onChoice={onRevealChoice}
-                    showChoices={isLast && awaitingRevealChoice}
-                  />
-                </div>
-              );
-            }
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-              >
-                <div
-                  style={{
-                    maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
-                    background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
-                    border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
-                    color: "var(--text)",
-                  }}
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                 >
-                  {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
-                  <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
-                </div>
-                {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                  <div
+                    style={{
+                      maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
+                      background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
+                      border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
+                    <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
+                  </div>
+                  {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
-        {showIntake && <SituationInput s={s} lang={lang} onSubmit={handleSituationSubmit} />}
+          {showIntake && <SituationInput s={s} lang={lang} onSubmit={handleSituationSubmit} />}
 
-        {stage === "extracting" && (
-          <div className="flex justify-start items-center" style={{ gap: 8 }}>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <LogoOrb size={20} thinking={true} />
-              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.readingBetweenLines}</span>
+          {stage === "extracting" && (
+            <div className="flex justify-start items-center" style={{ gap: 8 }}>
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                <LogoOrb size={20} thinking={true} />
+                <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.readingBetweenLines}</span>
+              </div>
+            </div>
+          )}
+
+          {stage === "confirm" && extracted && <ConfirmSummary s={s} extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
+          {stage === "processing" && <ProcessingSequence s={s} onComplete={onProcessingComplete} />}
+          {stage === "limit-reached" && <LimitReached s={s} onUpgrade={() => alert(s.contactStylistAlert)} />}
+
+          {(stage === "refine-loading" || stage === "quickadvice-loading") && (
+            <div className="flex justify-start items-center" style={{ gap: 8 }}>
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                <LogoOrb size={20} thinking={true} />
+                <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.thinking}</span>
+              </div>
+            </div>
+          )}
+
+          {stage === "refine" && refineQs && <RefineQuestions questions={refineQs} onDone={onRefineDone} />}
+          {stage === "waiting" && <WaitingForStylist s={s} />}
+          {stage === "blueprint" && blueprintData && <Blueprint s={s} blueprint={blueprintData.blueprint} />}
+          {stage === "quickadvice" && quickTips && <QuickAdvice s={s} tips={quickTips} />}
+
+          {stage === "post-history" && !awaitingRevealChoice && (
+            <button
+              onClick={handleReanalyze}
+              style={{ padding: "10px 20px", borderRadius: 50, background: "transparent", border: "1px solid rgba(199,155,69,0.4)", color: "var(--gold)", fontSize: 13, cursor: "pointer" }}
+            >
+              {s.reanalyzeButton}
+            </button>
+          )}
+
+          <div ref={endRef} />
+        </div>
+
+        {showChatInput && (
+          <div className="px-4 pb-6 relative" style={{ zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 28, padding: "6px 8px 6px 16px" }}>
+              <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Attach">
+                <i className="ti ti-plus" style={{ fontSize: 18 }} />
+              </button>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
+                placeholder={s.chatPlaceholder}
+                style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
+              />
+              <button
+                onClick={startChatListening}
+                style={{
+                  background: chatListening ? "var(--gold)" : "transparent",
+                  border: "none", cursor: "pointer",
+                  color: chatListening ? "#080808" : "var(--text-dim)",
+                  display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
+                }}
+                aria-label="Voice"
+              >
+                <i className="ti ti-microphone" style={{ fontSize: 18 }} />
+              </button>
+              <button
+                onClick={sendFreeText}
+                disabled={!input.trim()}
+                style={{ width: 34, height: 34, borderRadius: "50%", background: input.trim() ? "var(--gold)" : "var(--surface-2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "default", flexShrink: 0 }}
+                aria-label="Send"
+              >
+                <i className="ti ti-arrow-up" style={{ fontSize: 16, color: input.trim() ? "#080808" : "var(--text-dim)" }} />
+              </button>
             </div>
           </div>
         )}
-
-        {stage === "confirm" && extracted && <ConfirmSummary s={s} extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
-        {stage === "processing" && <ProcessingSequence s={s} onComplete={onProcessingComplete} />}
-        {stage === "limit-reached" && <LimitReached s={s} onUpgrade={() => alert(s.contactStylistAlert)} />}
-
-        {(stage === "refine-loading" || stage === "quickadvice-loading") && (
-          <div className="flex justify-start items-center" style={{ gap: 8 }}>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <LogoOrb size={20} thinking={true} />
-              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.thinking}</span>
-            </div>
-          </div>
-        )}
-
-        {stage === "refine" && refineQs && <RefineQuestions questions={refineQs} onDone={onRefineDone} />}
-        {stage === "waiting" && <WaitingForStylist s={s} />}
-        {stage === "blueprint" && blueprintData && <Blueprint s={s} blueprint={blueprintData.blueprint} />}
-        {stage === "quickadvice" && quickTips && <QuickAdvice s={s} tips={quickTips} />}
-
-        {stage === "post-history" && !awaitingRevealChoice && (
-          <button
-            onClick={handleReanalyze}
-            style={{ padding: "10px 20px", borderRadius: 50, background: "transparent", border: "1px solid rgba(199,155,69,0.4)", color: "var(--gold)", fontSize: 13, cursor: "pointer" }}
-          >
-            {s.reanalyzeButton}
-          </button>
-        )}
-
-        <div ref={endRef} />
       </div>
 
-      {showChatInput && (
-        <div className="px-4 pb-6 relative" style={{ zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 28, padding: "6px 8px 6px 16px" }}>
-            <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }} aria-label="Attach">
-              <i className="ti ti-plus" style={{ fontSize: 18 }} />
-            </button>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendFreeText()}
-              placeholder={s.chatPlaceholder}
-              style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "var(--text)", outline: "none", padding: "8px 0" }}
-            />
-            <button
-              onClick={startChatListening}
-              style={{
-                background: chatListening ? "var(--gold)" : "transparent",
-                border: "none", cursor: "pointer",
-                color: chatListening ? "#080808" : "var(--text-dim)",
-                display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
-              }}
-              aria-label="Voice"
-            >
-              <i className="ti ti-microphone" style={{ fontSize: 18 }} />
-            </button>
-            <button
-              onClick={sendFreeText}
-              disabled={!input.trim()}
-              style={{ width: 34, height: 34, borderRadius: "50%", background: input.trim() ? "var(--gold)" : "var(--surface-2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "default", flexShrink: 0 }}
-              aria-label="Send"
-            >
-              <i className="ti ti-arrow-up" style={{ fontSize: 16, color: input.trim() ? "#080808" : "var(--text-dim)" }} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Star Rating Modal — appears 60s after analysis or 2.5s after outfit image */}
       <StarRatingModal
         isOpen={ratingType !== null}
         onClose={() => setRatingType(null)}
@@ -847,7 +984,6 @@ export default function Conversation() {
         lang={lang}
       />
 
-      {/* ProModal — bilingual, triggered every 3rd session */}
       <ProModal open={proOpen} onClose={() => setProOpen(false)} lang={lang} />
     </div>
   );
