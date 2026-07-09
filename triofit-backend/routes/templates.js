@@ -45,6 +45,32 @@ router.post("/templates", async (req, res) => {
   }
 });
 
+// ★ NEW: Edit an existing template
+router.put("/templates/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      description, occasion, gender, style_tag, image_url,
+      base_confidence, base_authority, base_trust, base_approachability, base_style_fit,
+    } = req.body;
+
+    const { data, error } = await supabase
+      .from("outfit_templates")
+      .update({
+        description, occasion, gender, style_tag, image_url,
+        base_confidence, base_authority, base_trust, base_approachability, base_style_fit,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 async function deliverTemplate(session_id, template, wasOverride = false, aiSuggestedId = null, aiConfidence = null, profile = null, wasAutoSent = false) {
   const { data: msg, error: mErr } = await supabase
     .from("messages")
