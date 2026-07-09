@@ -7,6 +7,7 @@ import ChatBackground from "../components/chat/ChatBackground";
 import ThemeToggle from "../components/shared/ThemeToggle";
 import LangToggle from "../components/shared/LangToggle";
 import ProModal from "../components/shared/ProModal";
+import StarRatingModal from "../components/shared/StarRatingModal";
 import { sb } from "../lib/supabase";
 import { useLang, t } from "../lib/i18n";
 
@@ -409,9 +410,22 @@ export default function Conversation() {
   const [chatListening, setChatListening] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
+
+  // ── NEW: Rating modal & session counter ──
+  const [ratingType, setRatingType] = useState(null); // "analysis" | "outfit" | null
+  const [outfitReceived, setOutfitReceived] = useState(false);
+  const sessionCount = useRef(parseInt(localStorage.getItem("tf_session_count") || "0", 10));
+
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
+
+  // Increment session counter on mount
+  useEffect(() => {
+    const count = sessionCount.current + 1;
+    sessionCount.current = count;
+    localStorage.setItem("tf_session_count", String(count));
+  }, []);
 
   function messageFromRow(m) {
     if (m.message_type === "analysis") {
@@ -462,6 +476,13 @@ export default function Conversation() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const m = payload.new;
         if (m.session_id !== sessionId || m.sender !== "admin") return;
+
+        // ── NEW: Detect image arrival ──
+        if (m.message_type === "image") {
+          setOutfitReceived(true);
+          setTimeout(() => setRatingType("outfit"), 2500);
+        }
+
         setMessages((msgs) => [...msgs, messageFromRow(m)]);
       })
       .subscribe();
@@ -523,7 +544,15 @@ export default function Conversation() {
       setMessages((m) => [...m, { role: "assistant", type: "analysis", analysis: res.data }]);
       setAwaitingRevealChoice(true);
       setStage("post-history");
-      setProOpen(true);
+
+      // ── NEW: Trigger analysis rating after 2 seconds ──
+      setTimeout(() => setRatingType("analysis"), 2000);
+
+      // ── NEW: Show ProModal every 3rd session ──
+      if (sessionCount.current >= 3) {
+        setTimeout(() => setProOpen(true), 3500);
+      }
+
       axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
 
       axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile, lang })
@@ -783,7 +812,18 @@ export default function Conversation() {
         </div>
       )}
 
-      <ProModal open={proOpen} onClose={() => setProOpen(false)} />
+      {/* ── NEW: Star Rating Modal ── */}
+      <StarRatingModal
+        isOpen={ratingType !== null}
+        onClose={() => setRatingType(null)}
+        type={ratingType || "analysis"}
+        sessionId={sessionId}
+        userName={userName}
+        lang={lang}
+      />
+
+      {/* ── ProModal (already existed, now triggered at the right moment) ── */}
+      <ProModal open={proOpen} onClose={() => setProOpen(false)} lang={lang} />
     </div>
   );
 }
