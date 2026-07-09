@@ -412,7 +412,7 @@ export default function Conversation() {
   const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
 
   // Rating modal state
-  const [ratingType, setRatingType] = useState(null); // "analysis" | "outfit" | null
+  const [ratingType, setRatingType] = useState(null);
   const [outfitReceived, setOutfitReceived] = useState(false);
   const sessionCount = useRef(parseInt(localStorage.getItem("tf_session_count") || "0", 10));
 
@@ -516,6 +516,15 @@ export default function Conversation() {
   async function handleSituationSubmit(text) {
     setSituation(text);
     pushUser(text);
+
+    // ★ Save the user's situation/intake message to Supabase
+    await axios.post(`${BACKEND}/messages`, {
+      session_id: sessionId,
+      sender: "user",
+      message: text,
+      message_type: "text",
+    }).catch(() => {});
+
     setStage("extracting");
     try {
       const res = await axios.post(`${BACKEND}/extract`, { situation: text, goal, lang });
