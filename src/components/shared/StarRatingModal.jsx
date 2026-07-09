@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../lib/supabase";
+import { sb } from "../../lib/supabase";
 
 const COPY = {
   fr: {
