@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import LogoOrb from "../components/shared/LogoOrb";
 import ChatBackground from "../components/chat/ChatBackground";
@@ -57,7 +58,7 @@ function SituationInput({ s, lang, onSubmit }) {
   function startListening() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Voice input isn't supported in this browser.");
+      alert(s.voiceNotSupported);
       return;
     }
     const recognition = new SpeechRecognition();
@@ -217,7 +218,7 @@ function ProcessingSequence({ s, onComplete }) {
   );
 }
 
-function PerceptionReveal({ s, analysis, onChoice, onReanalyze }) {
+function AnalysisMessage({ s, analysis, onChoice, showChoices }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: "8px 0 20px" }}>
       <div style={{ fontSize: 11, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 10 }}>
@@ -226,30 +227,31 @@ function PerceptionReveal({ s, analysis, onChoice, onReanalyze }) {
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", marginBottom: 12 }}>{analysis.impression}</p>
         <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealReasons}</div>
-        {analysis.reasons.map((r, i) => (
+        {(analysis.reasons || []).map((r, i) => (
           <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 4, display: "flex", gap: 6 }}>
             <span style={{ color: "var(--gold)" }}>—</span>{r}
           </div>
         ))}
       </div>
       <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        <div>{analysis.traits.strong.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {tr}</span>)}</div>
-        <div>{analysis.traits.caution.map((tr) => <span key={tr} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {tr}</span>)}</div>
+        <div>{(analysis.traits?.strong || []).map((tr) => <span key={tr} style={{ fontSize: 12, color: "#5DCAA5", marginRight: 10 }}>✓ {tr}</span>)}</div>
+        <div>{(analysis.traits?.caution || []).map((tr) => <span key={tr} style={{ fontSize: 12, color: "#D85A30", marginRight: 10 }}>⚠ {tr}</span>)}</div>
       </div>
       <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: 6 }}>{s.revealPrediction}</div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{analysis.prediction}</p>
-      <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>{s.revealCta}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          {s.revealYes}
-        </button>
-        <button onClick={() => onChoice("no")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
-          {s.revealNo}
-        </button>
-        <button onClick={onReanalyze} style={{ padding: "10px", background: "transparent", border: "none", color: "var(--gold)", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}>
-          {s.reanalyzeButton}
-        </button>
-      </div>
+      <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.7, marginBottom: showChoices ? 20 : 0, fontStyle: "italic" }}>{analysis.prediction}</p>
+      {showChoices && (
+        <>
+          <div style={{ fontSize: 14, color: "var(--text)", marginBottom: 14, textAlign: "center" }}>{s.revealCta}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button onClick={() => onChoice("yes")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--gold)", border: "none", color: "#080808", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {s.revealYes}
+            </button>
+            <button onClick={() => onChoice("no")} style={{ padding: "14px 20px", borderRadius: 14, background: "transparent", border: "1px solid var(--border-soft)", color: "var(--text-dim)", fontSize: 14, cursor: "pointer" }}>
+              {s.revealNo}
+            </button>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
@@ -386,20 +388,18 @@ function genSessionId() {
 }
 
 export default function Conversation() {
+  const navigate = useNavigate();
   const userName = localStorage.getItem("tf_name") || "there";
   const goal = localStorage.getItem("tf_goal") || "authority";
   const sessionId = useRef(genSessionId()).current;
   const [lang, setLangState] = useState(useLang());
   const s = t(lang);
 
-  const [messages, setMessages] = useState([
-    { role: "assistant", text: s.greeting(userName) },
-  ]);
-  const [stage, setStage] = useState("intake");
+  const [messages, setMessages] = useState([]);
+  const [stage, setStage] = useState("loading");
   const [situation, setSituation] = useState("");
   const [extracted, setExtracted] = useState(null);
   const [profile, setProfile] = useState({});
-  const [analysis, setAnalysis] = useState(null);
   const [refineQs, setRefineQs] = useState(null);
   const [prefetchedRefineQs, setPrefetchedRefineQs] = useState(null);
   const [blueprintData, setBlueprintData] = useState(null);
@@ -408,18 +408,27 @@ export default function Conversation() {
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatListening, setChatListening] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+  const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
 
+  function messageFromRow(m) {
+    if (m.message_type === "analysis") {
+      let parsed = null;
+      try { parsed = JSON.parse(m.message); } catch { parsed = null; }
+      return { role: "assistant", type: "analysis", analysis: parsed };
+    }
+    if (m.message_type === "image") {
+      return { role: "assistant", text: m.message, image: m.image_url };
+    }
+    return { role: m.sender === "user" ? "user" : "assistant", text: m.message };
+  }
+
   useEffect(() => {
     axios.get(`${BACKEND}/history/${sessionId}`).then((res) => {
       if (res.data.session && res.data.messages.length > 0) {
-        const restored = res.data.messages.map((m) => ({
-          role: m.sender === "user" ? "user" : "assistant",
-          text: m.message,
-          image: m.image_url || undefined,
-        }));
+        const restored = res.data.messages.map(messageFromRow);
         setMessages(restored);
         setProfile({
           gender: res.data.session.gender,
@@ -427,23 +436,24 @@ export default function Conversation() {
           style: res.data.session.style,
           occasion: res.data.session.occasion,
         });
-        setStage("blueprint");
+        const hasImage = res.data.messages.some((m) => m.message_type === "image");
+        setStage(hasImage ? "blueprint" : "post-history");
         setShowChatInput(true);
-      }
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    axios.get(`${BACKEND}/history/${sessionId}`).then((res) => {
-      if (!res.data.session || res.data.messages.length === 0) {
+      } else {
+        const greetingMsg = { role: "assistant", text: s.greeting(userName) };
+        setMessages([greetingMsg]);
         axios.post(`${BACKEND}/messages`, {
           session_id: sessionId,
           sender: "admin",
           message: s.greeting(userName),
           message_type: "text",
         }).catch(() => {});
+        setStage("intake");
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setMessages([{ role: "assistant", text: s.greeting(userName) }]);
+      setStage("intake");
+    });
   }, []);
 
   useEffect(() => {
@@ -452,11 +462,7 @@ export default function Conversation() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const m = payload.new;
         if (m.session_id !== sessionId || m.sender !== "admin") return;
-        if (m.message_type === "image") {
-          setMessages((msgs) => [...msgs, { role: "assistant", text: m.message, image: m.image_url }]);
-        } else {
-          setMessages((msgs) => [...msgs, { role: "assistant", text: m.message }]);
-        }
+        setMessages((msgs) => [...msgs, messageFromRow(m)]);
       })
       .subscribe();
 
@@ -474,7 +480,6 @@ export default function Conversation() {
     };
   }, [sessionId]);
 
-  function pushAssistant(text) { setMessages((m) => [...m, { role: "assistant", text }]); }
   function pushUser(text) { setMessages((m) => [...m, { role: "user", text }]); }
 
   async function handleSituationSubmit(text) {
@@ -482,12 +487,12 @@ export default function Conversation() {
     pushUser(text);
     setStage("extracting");
     try {
-      const res = await axios.post(`${BACKEND}/extract`, { situation: text, goal });
+      const res = await axios.post(`${BACKEND}/extract`, { situation: text, goal, lang });
       setExtracted(res.data);
       setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
       setStage("confirm");
     } catch {
-      pushAssistant(s.extractTrouble);
+      setMessages((m) => [...m, { role: "assistant", text: s.extractTrouble }]);
       setStage("intake");
     }
   }
@@ -506,7 +511,7 @@ export default function Conversation() {
         return;
       }
     } catch {
-      // if limit-check fails, fail open rather than blocking a user unfairly
+      // fail open
     }
 
     setStage("processing");
@@ -514,34 +519,36 @@ export default function Conversation() {
 
   async function onProcessingComplete() {
     try {
-      const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation });
-      setAnalysis(res.data);
-      setStage("reveal");
+      const res = await axios.post(`${BACKEND}/analysis`, { session_id: sessionId, profile, goal, situation, lang });
+      setMessages((m) => [...m, { role: "assistant", type: "analysis", analysis: res.data }]);
+      setAwaitingRevealChoice(true);
+      setStage("post-history");
       setProOpen(true);
       axios.post(`${BACKEND}/session/${sessionId}/record-analysis`).catch(() => {});
 
-      axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile })
+      axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile, lang })
         .then((r) => setPrefetchedRefineQs(r.data.questions))
         .catch(() => {});
     } catch {
-      pushAssistant(s.stylistBrainTrouble);
-      setStage("reveal");
-      setAnalysis({ impression: "", reasons: [], traits: { strong: [], caution: [] }, prediction: "" });
+      setMessages((m) => [...m, { role: "assistant", text: s.stylistBrainTrouble }]);
+      setStage("post-history");
     }
   }
 
   function handleReanalyze() {
     setStage("intake");
-    setAnalysis(null);
     setExtracted(null);
     setPrefetchedRefineQs(null);
+    setAwaitingRevealChoice(false);
   }
 
   async function onRevealChoice(choice) {
+    setAwaitingRevealChoice(false);
+
     if (choice === "no") {
       setStage("quickadvice-loading");
       try {
-        const res = await axios.post(`${BACKEND}/quick-advice`, { situation, goal });
+        const res = await axios.post(`${BACKEND}/quick-advice`, { situation, goal, lang });
         setQuickTips(res.data.tips);
         setStage("quickadvice");
         setShowChatInput(true);
@@ -561,7 +568,7 @@ export default function Conversation() {
 
     setStage("refine-loading");
     try {
-      const res = await axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile });
+      const res = await axios.post(`${BACKEND}/refine-questions`, { situation, goal, profile, lang });
       setRefineQs(res.data.questions);
       setStage("refine");
     } catch {
@@ -581,11 +588,11 @@ export default function Conversation() {
     try {
       const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
       if (!res.data.suggestion) {
-        pushAssistant(s.noTemplateYet);
+        setMessages((m) => [...m, { role: "assistant", text: s.noTemplateYet }]);
       }
       setShowChatInput(true);
     } catch {
-      pushAssistant(s.catalogTrouble);
+      setMessages((m) => [...m, { role: "assistant", text: s.catalogTrouble }]);
       setShowChatInput(true);
     }
   }
@@ -593,7 +600,7 @@ export default function Conversation() {
   function startChatListening() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Voice input isn't supported in this browser.");
+      alert(s.voiceNotSupported);
       return;
     }
     const recognition = new SpeechRecognition();
@@ -621,11 +628,14 @@ export default function Conversation() {
       .post(`${BACKEND}/chat`, {
         session_id: sessionId,
         profile,
-        messages: [...messages, { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
+        messages: [...messages.filter((m) => m.text), { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
+        lang,
       })
-      .then((res) => pushAssistant(res.data.reply))
-      .catch(() => pushAssistant(s.connectionIssue));
+      .then((res) => setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]))
+      .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
   }
+
+  const showIntake = stage === "intake";
 
   return (
     <div className="h-screen flex flex-col relative" style={{ background: "var(--bg)" }}>
@@ -637,12 +647,12 @@ export default function Conversation() {
         }}
       >
         <button
-          onClick={() => window.history.back()}
+          onClick={() => navigate(-1)}
           style={{
             background: "transparent", border: "none", cursor: "pointer",
             color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4,
           }}
-          aria-label="Back"
+          aria-label={s.backLabel}
         >
           <i className="ti ti-arrow-left" style={{ fontSize: 18 }} />
         </button>
@@ -657,30 +667,45 @@ export default function Conversation() {
       <ChatBackground />
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
         <AnimatePresence>
-          {messages.map((m, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-            >
-              <div
-                style={{
-                  maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
-                  background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
-                  border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
-                  color: "var(--text)",
-                }}
+          {messages.map((m, i) => {
+            if (m.type === "analysis" && m.analysis) {
+              const isLast = i === messages.length - 1;
+              return (
+                <div key={i}>
+                  <AnalysisMessage
+                    s={s}
+                    analysis={m.analysis}
+                    onChoice={onRevealChoice}
+                    showChoices={isLast && awaitingRevealChoice}
+                  />
+                </div>
+              );
+            }
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
               >
-                {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
-                <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
-              </div>
-              {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
-            </motion.div>
-          ))}
+                <div
+                  style={{
+                    maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
+                    background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
+                    border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
+                    color: "var(--text)",
+                  }}
+                >
+                  {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
+                  <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
+                </div>
+                {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
 
-        {stage === "intake" && <SituationInput s={s} lang={lang} onSubmit={handleSituationSubmit} />}
+        {showIntake && <SituationInput s={s} lang={lang} onSubmit={handleSituationSubmit} />}
 
         {stage === "extracting" && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
@@ -693,8 +718,7 @@ export default function Conversation() {
 
         {stage === "confirm" && extracted && <ConfirmSummary s={s} extracted={extracted} onConfirm={handleConfirm} onEdit={handleEditRequest} />}
         {stage === "processing" && <ProcessingSequence s={s} onComplete={onProcessingComplete} />}
-        {stage === "limit-reached" && <LimitReached s={s} onUpgrade={() => alert("Contact your stylist directly to upgrade to Pro.")} />}
-        {stage === "reveal" && analysis && <PerceptionReveal s={s} analysis={analysis} onChoice={onRevealChoice} onReanalyze={handleReanalyze} />}
+        {stage === "limit-reached" && <LimitReached s={s} onUpgrade={() => alert(s.contactStylistAlert)} />}
 
         {(stage === "refine-loading" || stage === "quickadvice-loading") && (
           <div className="flex justify-start items-center" style={{ gap: 8 }}>
@@ -709,6 +733,15 @@ export default function Conversation() {
         {stage === "waiting" && <WaitingForStylist s={s} />}
         {stage === "blueprint" && blueprintData && <Blueprint s={s} blueprint={blueprintData.blueprint} />}
         {stage === "quickadvice" && quickTips && <QuickAdvice s={s} tips={quickTips} />}
+
+        {stage === "post-history" && !awaitingRevealChoice && (
+          <button
+            onClick={handleReanalyze}
+            style={{ padding: "10px 20px", borderRadius: 50, background: "transparent", border: "1px solid rgba(199,155,69,0.4)", color: "var(--gold)", fontSize: 13, cursor: "pointer" }}
+          >
+            {s.reanalyzeButton}
+          </button>
+        )}
 
         <div ref={endRef} />
       </div>
