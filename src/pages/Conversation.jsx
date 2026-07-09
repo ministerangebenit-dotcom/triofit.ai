@@ -411,10 +411,13 @@ export default function Conversation() {
   const [proOpen, setProOpen] = useState(false);
   const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
 
-  // ── NEW: Rating modal & session counter ──
+  // Rating modal state
   const [ratingType, setRatingType] = useState(null); // "analysis" | "outfit" | null
   const [outfitReceived, setOutfitReceived] = useState(false);
   const sessionCount = useRef(parseInt(localStorage.getItem("tf_session_count") || "0", 10));
+
+  // Timer ref for delayed analysis rating
+  const analysisRatingTimer = useRef(null);
 
   const endRef = useRef(null);
 
@@ -425,6 +428,13 @@ export default function Conversation() {
     const count = sessionCount.current + 1;
     sessionCount.current = count;
     localStorage.setItem("tf_session_count", String(count));
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (analysisRatingTimer.current) clearTimeout(analysisRatingTimer.current);
+    };
   }, []);
 
   function messageFromRow(m) {
@@ -477,7 +487,7 @@ export default function Conversation() {
         const m = payload.new;
         if (m.session_id !== sessionId || m.sender !== "admin") return;
 
-        // ── NEW: Detect image arrival ──
+        // Detect image arrival
         if (m.message_type === "image") {
           setOutfitReceived(true);
           setTimeout(() => setRatingType("outfit"), 2500);
@@ -545,10 +555,11 @@ export default function Conversation() {
       setAwaitingRevealChoice(true);
       setStage("post-history");
 
-      // ── NEW: Trigger analysis rating after 2 seconds ──
-      setTimeout(() => setRatingType("analysis"), 2000);
+      // ★ Delayed analysis rating: 60 seconds after analysis appears
+      if (analysisRatingTimer.current) clearTimeout(analysisRatingTimer.current);
+      analysisRatingTimer.current = setTimeout(() => setRatingType("analysis"), 60000);
 
-      // ── NEW: Show ProModal every 3rd session ──
+      // Show ProModal every 3rd session
       if (sessionCount.current >= 3) {
         setTimeout(() => setProOpen(true), 3500);
       }
@@ -569,6 +580,11 @@ export default function Conversation() {
     setExtracted(null);
     setPrefetchedRefineQs(null);
     setAwaitingRevealChoice(false);
+    // Clear the rating timer if they reanalyze before it fires
+    if (analysisRatingTimer.current) {
+      clearTimeout(analysisRatingTimer.current);
+      analysisRatingTimer.current = null;
+    }
   }
 
   async function onRevealChoice(choice) {
@@ -812,7 +828,7 @@ export default function Conversation() {
         </div>
       )}
 
-      {/* ── NEW: Star Rating Modal ── */}
+      {/* Star Rating Modal — appears 60s after analysis or 2.5s after outfit image */}
       <StarRatingModal
         isOpen={ratingType !== null}
         onClose={() => setRatingType(null)}
@@ -822,7 +838,7 @@ export default function Conversation() {
         lang={lang}
       />
 
-      {/* ── ProModal (already existed, now triggered at the right moment) ── */}
+      {/* ProModal — bilingual, triggered every 3rd session */}
       <ProModal open={proOpen} onClose={() => setProOpen(false)} lang={lang} />
     </div>
   );
