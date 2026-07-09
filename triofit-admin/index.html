@@ -22,6 +22,9 @@
     --green: #5DCAA5;
     --red: #D85A30;
     --purple: #7F77DD;
+    --blue: #4D8FD9;
+    --teal: #38B2AC;
+    --pink: #D96B8C;
     --font-display: Georgia, 'Times New Roman', serif;
   }
 
@@ -255,26 +258,26 @@
   .session-row .ssit { color: var(--text-dim); font-style: italic; margin-top: 4px; font-size: 12px; }
   .session-row .saction { flex-shrink: 0; }
 
-  /* ═══════════ MODAL ═══════════ */
+  /* ═══════════ MODAL (wider conversation view) ═══════════ */
   .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
     z-index: 1000; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal-box {
-    background: var(--surface); border-radius: 18px; max-width: 560px; width: 100%;
-    max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;
+    background: var(--surface); border-radius: 18px; max-width: 640px; width: 100%;
+    max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
     border: 1px solid var(--border);
   }
   .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
   .modal-header h3 { margin: 0; font-size: 14px; color: var(--text); }
   .modal-close { background: transparent; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
-  .modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; max-height: 55vh; }
+  .modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; max-height: 60vh; }
   .msg-bubble {
-    max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13px;
-    margin-bottom: 8px; line-height: 1.5; word-break: break-word;
+    max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px;
+    margin-bottom: 10px; line-height: 1.5; word-break: break-word;
   }
-  .msg-bubble.user { background: var(--gold-dim); border: 1px solid var(--gold-border); margin-left: auto; }
+  .msg-bubble.user { background: rgba(199,155,69,0.12); border: 1px solid var(--gold-border); margin-left: auto; }
   .msg-bubble.admin { background: var(--surface2); border: 1px solid var(--border); }
   .msg-bubble img { max-width: 100%; border-radius: 8px; margin-top: 6px; }
   .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
@@ -293,6 +296,7 @@
     .charts-grid { grid-template-columns: 1fr; }
     .kpi-row { flex-wrap: wrap; }
     .kpi-card { min-width: 100px; }
+    .modal-box { max-width: 100%; }
   }
 </style>
 </head>
@@ -435,7 +439,9 @@
 const API = "https://triofitai-production.up.railway.app/api";
 const GOLD = '#C79B45';
 const GOLD_LIGHT = '#D9AE5A';
-const CHART_COLORS = ['#C79B45','#D9AE5A','#7F77DD','#5DCAA5','#D85A30','#E9C275','#8d6523'];
+// Distinct chart palette — no more all‑gold bars
+const BAR_COLORS = ['#5DCAA5','#4D8FD9','#D96B8C','#7F77DD','#38B2AC','#D85A30','#C79B45','#D9AE5A'];
+const DOUGHNUT_COLORS = ['#C79B45','#7F77DD','#5DCAA5','#D85A30','#4D8FD9','#D96B8C','#38B2AC','#D9AE5A','#8d6523'];
 let queueCache = [], allTemplatesCache = [], currentFilter = 'all', chartInstances = {};
 
 // ── PAGE SWITCHING ──
@@ -487,7 +493,6 @@ function renderQueue() {
     return true;
   });
 
-  document.getElementById('queueGrid').innerHTML = filtered.length ? '' : '';
   document.getElementById('queueEmpty').style.display = filtered.length ? 'none' : 'block';
 
   if (!filtered.length) {
@@ -579,15 +584,17 @@ async function addTemplate() {
   toggleTemplateForm();
 }
 
-// ── ANALYTICS ──
+// ── ANALYTICS (with diverse colors) ──
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
 function renderBar(canvasId, counts) {
   destroyChart(canvasId);
   var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
   var ctx = document.getElementById(canvasId).getContext('2d');
+  // assign a different colour to each bar
+  var colors = entries.map(function(_, i) { return BAR_COLORS[i % BAR_COLORS.length]; });
   chartInstances[canvasId] = new Chart(ctx, {
-    type:'bar', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: GOLD, borderRadius:6, maxBarThickness:36 }] },
+    type:'bar', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: colors, borderRadius:6, maxBarThickness:36 }] },
     options:{ plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', font:{ size:11 } }, grid:{ display:false } }, y:{ ticks:{ color:'#999', font:{ size:11 }, precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } } } }
   });
 }
@@ -596,8 +603,9 @@ function renderDoughnut(canvasId, counts) {
   destroyChart(canvasId);
   var entries = Object.entries(counts).sort(function(a,b){ return b[1]-a[1]; });
   var ctx = document.getElementById(canvasId).getContext('2d');
+  var colors = entries.map(function(_, i) { return DOUGHNUT_COLORS[i % DOUGHNUT_COLORS.length]; });
   chartInstances[canvasId] = new Chart(ctx, {
-    type:'doughnut', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: CHART_COLORS, borderColor:'#0f0e12', borderWidth:2 }] },
+    type:'doughnut', data:{ labels: entries.map(function(e){ return e[0]; }), datasets:[{ data: entries.map(function(e){ return e[1]; }), backgroundColor: colors, borderColor:'#0f0e12', borderWidth:2 }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#ccc', font:{ size:11 }, padding:12 } } } }
   });
 }
@@ -614,11 +622,11 @@ async function loadAnalytics() {
     { label:'Avg session', value: formatDuration(data.avgDurationSeconds) }
   ].map(function(k) { return '<div class="kpi-card"><div class="label">'+k.label+'</div><div class="value">'+k.value+'</div></div>'; }).join('');
 
-  // Funnel
+  // Funnel with distinct colors
   destroyChart('funnelChart');
   var ctx = document.getElementById('funnelChart').getContext('2d');
   chartInstances['funnelChart'] = new Chart(ctx, {
-    type:'bar', data:{ labels:['Started','Analysis','Outfits sent'], datasets:[{ data:[data.funnel.totalSessionsStarted, data.funnel.sessionsThatReachedAnalysis, data.funnel.outfitsSent], backgroundColor:[GOLD, GOLD_LIGHT,'#5DCAA5'], borderRadius:6 }] },
+    type:'bar', data:{ labels:['Started','Analysis','Outfits sent'], datasets:[{ data:[data.funnel.totalSessionsStarted, data.funnel.sessionsThatReachedAnalysis, data.funnel.outfitsSent], backgroundColor:['#5DCAA5','#4D8FD9','#7F77DD'], borderRadius:6 }] },
     options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#999', precision:0 }, grid:{ color:'rgba(255,255,255,0.05)' } }, y:{ ticks:{ color:'#ccc' }, grid:{ display:false } } } }
   });
 
