@@ -131,7 +131,6 @@
   .session-row .sname { font-weight: 600; }
   .session-row .smeta { font-size: 11px; color: var(--text-dim); }
 
-  /* Chat page */
   .chat-layout { display: flex; height: 70vh; gap: 0; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); }
   .chat-user-list { width: 280px; border-right: 1px solid var(--border); overflow-y: auto; padding: 8px; }
   .chat-user-item { padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 2px; }
@@ -185,7 +184,6 @@
 
 <div class="main">
 
-  <!-- QUEUE PAGE -->
   <div class="page active" id="page-queue">
     <div class="page-header"><div><h2>Live Queue</h2><div class="subtitle" id="queueSubtitle">Loading…</div></div><button class="btn-secondary" onclick="loadQueue()">Refresh</button></div>
     <div class="toolbar">
@@ -198,7 +196,6 @@
     <div id="queueEmpty" style="display:none;text-align:center;color:var(--text-muted);padding:30px;">Queue is clear. Great work.</div>
   </div>
 
-  <!-- TEMPLATES PAGE -->
   <div class="page" id="page-templates">
     <div class="page-header"><div><h2>Templates</h2><div class="subtitle" id="templateSubtitle">Loading…</div></div><button class="btn-primary" onclick="openTemplateForm()">+ Add template</button></div>
     <div class="template-form" id="templateForm" style="display:none;"><h3 id="templateFormTitle">New template</h3>
@@ -214,7 +211,6 @@
     <div class="template-grid" id="templateGrid"></div>
   </div>
 
-  <!-- CHAT PAGE (Wizard-of-Oz) -->
   <div class="page" id="page-chat">
     <div class="page-header"><div><h2>Chat</h2><div class="subtitle">Send messages and outfits to users</div></div></div>
     <div class="chat-layout">
@@ -234,7 +230,6 @@
     </div>
   </div>
 
-  <!-- ANALYTICS PAGE -->
   <div class="page" id="page-analytics">
     <div class="page-header"><div><h2>Analytics</h2><div class="subtitle">Understand your users</div></div><div style="display:flex;gap:8px;">
       <button class="filter-chip active" data-range="all" onclick="setAnalyticsRange('all')">All time</button>
@@ -256,130 +251,306 @@
   </div>
 </div>
 
-<!-- EDIT TEMPLATE MODAL (used by templates page) -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-box"><div class="modal-header"><h3>Edit Template</h3><button class="modal-close" onclick="closeEditModal()">✕</button></div>
-    <div class="modal-body" id="editModalBody"></div>
-  </div>
-</div>
-
 <script>
 const API = "https://triofitai-production.up.railway.app/api";
 let queueCache=[], allTemplatesCache=[], currentFilter='all', chartInstances={}, analyticsRange='all', analyticsData=null;
 let chatSessionId=null, chatFile=null;
 
-// ── NAVIGATION ──
 function showPage(p) {
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active');});
   document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
-  document.querySelector('[data-page="'+p+'"]').classList.add('active');
-  if(p==='queue') loadQueue();
-  if(p==='templates') loadTemplates();
-  if(p==='chat') loadChatUsers();
-  if(p==='analytics') loadAnalytics();
+  document.querySelectorAll('.sidebar-nav button').forEach(function(b){b.classList.remove('active');});
+  var btn = document.querySelector('[data-page="'+p+'"]');
+  if (btn) btn.classList.add('active');
+  if (p==='queue') loadQueue();
+  if (p==='templates') loadTemplates();
+  if (p==='chat') loadChatUsers();
+  if (p==='analytics') loadAnalytics();
 }
 
-// ── QUEUE ──
-async function loadQueue(){queueCache=await fetch(API+'/admin/pending').then(r=>r.json()).catch(()=>[]);allTemplatesCache=await fetch(API+'/templates').then(r=>r.json()).catch(()=>[]);document.getElementById('queueBadge').textContent=queueCache.length;document.getElementById('queueSubtitle').textContent=queueCache.length+' waiting';renderQueue();}
-function setFilter(f){currentFilter=f;document.querySelectorAll('#page-queue .filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));renderQueue();}
-function renderQueue(){
-  const s=(document.getElementById('searchBox')?.value||'').toLowerCase();
-  const f=queueCache.filter(i=>{const n=((i.sessions?.name)||'').toLowerCase();const c=i.ai_confidence||0;if(s&&n.indexOf(s)===-1)return false;if(currentFilter==='high'&&c<85)return false;if(currentFilter==='low'&&c>=65)return false;return true;});
-  document.getElementById('queueEmpty').style.display=f.length?'none':'block';
-  document.getElementById('queueGrid').innerHTML=f.map(i=>{
-    const sess=i.sessions||{}; const tmpl=i.outfit_templates; const conf=i.ai_confidence||0;
-    let h='<div class="queue-card"><div class="header"><div><div class="name">'+(sess.name||'?')+'</div><div class="meta-row"><span>🎯'+(sess.goal||'—')+'</span><span>👔'+(sess.style||'—')+'</span><span>📍'+(sess.occasion||'—')+'</span></div></div><div class="confidence-badge '+((conf>=85)?'high':(conf>=65)?'mid':'low')+'">'+conf+'%</div></div>';
-    if(tmpl){h+='<div class="suggestion"><img src="'+tmpl.image_url+'" onerror="this.style.display=\'none\'"><div>'+tmpl.description+'</div></div><div class="actions"><button class="btn-primary" onclick="sendSuggested(\''+i.session_id+'\')">✓ Send</button><button class="btn-secondary" onclick="togglePicker(\''+i.session_id+'\')">↻ Change</button><button class="btn-view" onclick="openChatWith(\''+i.session_id+'\')">💬 Chat</button></div><div class="picker-panel" id="picker-'+i.session_id+'">'+allTemplatesCache.map(t=>'<div class="picker-item" onclick="sendOverride(\''+i.session_id+'\',\''+t.id+'\')"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div>'+t.description+'</div></div>').join('')+'</div>';}
-    else h+='<div style="padding:12px;color:var(--text-muted);">No template matched.</div>';
+async function loadQueue() {
+  queueCache = await fetch(API+'/admin/pending').then(function(r){return r.json();}).catch(function(){return [];});
+  allTemplatesCache = await fetch(API+'/templates').then(function(r){return r.json();}).catch(function(){return [];});
+  document.getElementById('queueBadge').textContent = queueCache.length;
+  document.getElementById('queueSubtitle').textContent = queueCache.length + ' waiting';
+  renderQueue();
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('#page-queue .filter-chip').forEach(function(c){c.classList.toggle('active',c.dataset.filter===f);});
+  renderQueue();
+}
+
+function renderQueue() {
+  var s = (document.getElementById('searchBox')?document.getElementById('searchBox').value:'').toLowerCase();
+  var f = queueCache.filter(function(i){
+    var n = ((i.sessions&&i.sessions.name)?i.sessions.name:'').toLowerCase();
+    var c = i.ai_confidence||0;
+    if (s && n.indexOf(s)===-1) return false;
+    if (currentFilter==='high'&&c<85) return false;
+    if (currentFilter==='low'&&c>=65) return false;
+    return true;
+  });
+  document.getElementById('queueEmpty').style.display = f.length?'none':'block';
+  document.getElementById('queueGrid').innerHTML = f.map(function(i){
+    var sess = i.sessions||{};
+    var tmpl = i.outfit_templates;
+    var conf = i.ai_confidence||0;
+    var h = '<div class="queue-card"><div class="header"><div><div class="name">'+(sess.name||'?')+'</div><div class="meta-row"><span>🎯'+(sess.goal||'—')+'</span><span>👔'+(sess.style||'—')+'</span><span>📍'+(sess.occasion||'—')+'</span></div></div><div class="confidence-badge '+((conf>=85)?'high':(conf>=65)?'mid':'low')+'">'+conf+'%</div></div>';
+    if (tmpl) {
+      h += '<div class="suggestion"><img src="'+tmpl.image_url+'" onerror="this.style.display=\'none\'"><div>'+tmpl.description+'</div></div><div class="actions"><button class="btn-primary" onclick="sendSuggested(\''+i.session_id+'\')">✓ Send</button><button class="btn-secondary" onclick="togglePicker(\''+i.session_id+'\')">↻ Change</button><button class="btn-view" onclick="openChatWith(\''+i.session_id+'\')">💬 Chat</button></div><div class="picker-panel" id="picker-'+i.session_id+'">'+allTemplatesCache.map(function(t){return '<div class="picker-item" onclick="sendOverride(\''+i.session_id+'\',\''+t.id+'\')"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div>'+t.description+'</div></div>';}).join('')+'</div>';
+    } else {
+      h += '<div style="padding:12px;color:var(--text-muted);">No template matched.</div>';
+    }
     return h+'</div>';
   }).join('');
 }
-function togglePicker(id){document.getElementById('picker-'+id).classList.toggle('open');}
-async function sendSuggested(id){await fetch(API+'/templates/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id})});loadQueue();}
-async function sendOverride(id,tid){await fetch(API+'/templates/override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id,template_id:tid})});loadQueue();}
 
-// ── TEMPLATES ──
-async function loadTemplates(){allTemplatesCache=await fetch(API+'/templates').then(r=>r.json()).catch(()=>[]);renderTemplates();}
-function renderTemplates(){
-  const s=(document.getElementById('templateSearch')?.value||'').toLowerCase();
-  const f=allTemplatesCache.filter(t=>!s||(t.description||'').toLowerCase().indexOf(s)!==-1);
-  document.getElementById('templateSubtitle').textContent=f.length+' templates';
-  document.getElementById('templateGrid').innerHTML=f.map(t=>'<div class="template-card"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div class="info"><div class="t-name">'+t.description+'</div><div class="t-meta">'+(t.occasion||'')+' · '+(t.gender||'Any')+' · '+(t.style_tag||'')+'</div><div class="t-scores"><span>C:'+(t.base_confidence||0)+'</span><span>A:'+(t.base_authority||0)+'</span><span>T:'+(t.base_trust||0)+'</span><span>Ap:'+(t.base_approachability||0)+'</span></div></div><button class="edit-btn" onclick="editTemplate(\''+t.id+'\')">✎ Edit</button></div>').join('');
+function togglePicker(id) { document.getElementById('picker-'+id).classList.toggle('open'); }
+
+async function sendSuggested(id) {
+  await fetch(API+'/templates/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id})});
+  loadQueue();
 }
-function openTemplateForm(){document.getElementById('templateForm').style.display='block';document.getElementById('templateFormTitle').textContent='New template';document.getElementById('t-edit-id').value='';document.getElementById('t-desc').value='';document.getElementById('t-image').value='';}
-function closeTemplateForm(){document.getElementById('templateForm').style.display='none';}
-function editTemplate(id){
-  const t=allTemplatesCache.find(x=>x.id==id); if(!t)return;
+
+async function sendOverride(id,tid) {
+  await fetch(API+'/templates/override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:id,template_id:tid})});
+  loadQueue();
+}
+
+async function loadTemplates() {
+  allTemplatesCache = await fetch(API+'/templates').then(function(r){return r.json();}).catch(function(){return [];});
+  renderTemplates();
+}
+
+function renderTemplates() {
+  var s = (document.getElementById('templateSearch')?document.getElementById('templateSearch').value:'').toLowerCase();
+  var f = allTemplatesCache.filter(function(t){return !s||(t.description||'').toLowerCase().indexOf(s)!==-1;});
+  document.getElementById('templateSubtitle').textContent = f.length+' templates';
+  document.getElementById('templateGrid').innerHTML = f.map(function(t){
+    return '<div class="template-card"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div class="info"><div class="t-name">'+t.description+'</div><div class="t-meta">'+(t.occasion||'')+' · '+(t.gender||'Any')+' · '+(t.style_tag||'')+'</div><div class="t-scores"><span>C:'+(t.base_confidence||0)+'</span><span>A:'+(t.base_authority||0)+'</span><span>T:'+(t.base_trust||0)+'</span><span>Ap:'+(t.base_approachability||0)+'</span></div></div><button class="edit-btn" onclick="editTemplate(\''+t.id+'\')">✎ Edit</button></div>';
+  }).join('');
+}
+
+function openTemplateForm() {
+  document.getElementById('templateForm').style.display='block';
+  document.getElementById('templateFormTitle').textContent='New template';
+  document.getElementById('t-edit-id').value='';
+  document.getElementById('t-desc').value='';
+  document.getElementById('t-image').value='';
+}
+
+function closeTemplateForm() { document.getElementById('templateForm').style.display='none'; }
+
+function editTemplate(id) {
+  var t = allTemplatesCache.find(function(x){return x.id==id;});
+  if (!t) return;
   document.getElementById('templateForm').style.display='block';
   document.getElementById('templateFormTitle').textContent='Edit template';
-  document.getElementById('t-edit-id').value=t.id;
-  document.getElementById('t-desc').value=t.description||'';
-  document.getElementById('t-occasion').value=t.occasion||'';
-  document.getElementById('t-gender').value=t.gender||'';
-  document.getElementById('t-style').value=t.style_tag||'';
-  document.getElementById('t-image').value=t.image_url||'';
-  document.getElementById('t-conf').value=t.base_confidence||80;
-  document.getElementById('t-auth').value=t.base_authority||80;
-  document.getElementById('t-trust').value=t.base_trust||80;
-  document.getElementById('t-appr').value=t.base_approachability||75;
-  document.getElementById('t-fit').value=t.base_style_fit||80;
-}
-async function saveTemplate(){
-  const body={description:document.getElementById('t-desc').value,occasion:document.getElementById('t-occasion').value,gender:document.getElementById('t-gender').value||null,style_tag:document.getElementById('t-style').value,image_url:document.getElementById('t-image').value,base_confidence:parseInt(document.getElementById('t-conf').value),base_authority:parseInt(document.getElementById('t-auth').value),base_trust:parseInt(document.getElementById('t-trust').value),base_approachability:parseInt(document.getElementById('t-appr').value),base_style_fit:parseInt(document.getElementById('t-fit').value)};
-  const editId=document.getElementById('t-edit-id').value;
-  if(editId){await fetch(API+'/templates/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
-  else {await fetch(API+'/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
-  closeTemplateForm(); loadTemplates();
+  document.getElementById('t-edit-id').value = t.id;
+  document.getElementById('t-desc').value = t.description||'';
+  document.getElementById('t-occasion').value = t.occasion||'';
+  document.getElementById('t-gender').value = t.gender||'';
+  document.getElementById('t-style').value = t.style_tag||'';
+  document.getElementById('t-image').value = t.image_url||'';
+  document.getElementById('t-conf').value = t.base_confidence||80;
+  document.getElementById('t-auth').value = t.base_authority||80;
+  document.getElementById('t-trust').value = t.base_trust||80;
+  document.getElementById('t-appr').value = t.base_approachability||75;
+  document.getElementById('t-fit').value = t.base_style_fit||80;
 }
 
-// ── CHAT (Wizard-of-Oz) ──
-async function loadChatUsers(){
-  const res=await fetch(API+'/analytics/sessions').then(r=>r.json()).catch(()=>[]);
-  document.getElementById('chatUserList').innerHTML=res.map(s=>'<div class="chat-user-item" onclick="openChatWith(\''+s.session_id+'\')"><div class="name">'+(s.name||'?')+'</div><div class="preview">'+(s.goal||'')+' · '+(s.occasion||'')+'</div></div>').join('')||'<div style="color:var(--text-muted);padding:10px;">No users yet.</div>';
+async function saveTemplate() {
+  var body = {
+    description: document.getElementById('t-desc').value,
+    occasion: document.getElementById('t-occasion').value,
+    gender: document.getElementById('t-gender').value||null,
+    style_tag: document.getElementById('t-style').value,
+    image_url: document.getElementById('t-image').value,
+    base_confidence: parseInt(document.getElementById('t-conf').value),
+    base_authority: parseInt(document.getElementById('t-auth').value),
+    base_trust: parseInt(document.getElementById('t-trust').value),
+    base_approachability: parseInt(document.getElementById('t-appr').value),
+    base_style_fit: parseInt(document.getElementById('t-fit').value)
+  };
+  var editId = document.getElementById('t-edit-id').value;
+  if (editId) {
+    await fetch(API+'/templates/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  } else {
+    await fetch(API+'/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }
+  closeTemplateForm();
+  loadTemplates();
 }
-function openChatWith(sid){chatSessionId=sid;showPage('chat');loadChatUsers();loadChatMessages(sid);document.getElementById('chatInputArea').style.display='flex';}
-async function loadChatMessages(sid){
-  const res=await fetch(API+'/messages/'+sid).then(r=>r.json()).catch(()=>[]);
-  document.getElementById('chatMessages').innerHTML=res.map(m=>{
-    const img=m.image_url?'<img src="'+m.image_url+'">':'';
+
+async function loadChatUsers() {
+  var res = await fetch(API+'/analytics/sessions').then(function(r){return r.json();}).catch(function(){return [];});
+  document.getElementById('chatUserList').innerHTML = res.map(function(s){
+    return '<div class="chat-user-item" onclick="openChatWith(\''+s.session_id+'\')"><div class="name">'+(s.name||'?')+'</div><div class="preview">'+(s.goal||'')+' · '+(s.occasion||'')+'</div></div>';
+  }).join('')||'<div style="color:var(--text-muted);padding:10px;">No users yet.</div>';
+}
+
+function openChatWith(sid) {
+  chatSessionId = sid;
+  showPage('chat');
+  loadChatUsers();
+  loadChatMessages(sid);
+  document.getElementById('chatInputArea').style.display='flex';
+}
+
+async function loadChatMessages(sid) {
+  var res = await fetch(API+'/messages/'+sid).then(function(r){return r.json();}).catch(function(){return [];});
+  document.getElementById('chatMessages').innerHTML = res.map(function(m){
+    var img = m.image_url?'<img src="'+m.image_url+'">':'';
     return '<div class="chat-bubble '+(m.sender==='user'?'user':'admin')+'">'+img+'<div>'+m.message+'</div></div>';
   }).join('')||'<div style="color:var(--text-muted);text-align:center;">No messages yet.</div>';
 }
-function previewChatImage(){const f=document.getElementById('chatFileInput').files[0];if(!f)return;chatFile=f;const r=new FileReader();r.onload=function(e){document.getElementById('chatPreviewImg').src=e.target.result;document.getElementById('chatImagePreview').style.display='flex';};r.readAsDataURL(f);}
-function clearChatImage(){chatFile=null;document.getElementById('chatImagePreview').style.display='none';document.getElementById('chatFileInput').value='';}
-async function sendChatMessage(){
-  const text=document.getElementById('chatTextInput').value.trim();if(!text&&!chatFile)return;
-  if(chatFile){/* upload to storage then send message with image_url */ const form=new FormData();form.append('file',chatFile);const upRes=await fetch(API+'/upload',{method:'POST',body:form}).then(r=>r.json()).catch(()=>null);const imgUrl=upRes?.url||'';if(imgUrl){await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text||'🖼 Outfit',message_type:'image',image_url:imgUrl})});}clearChatImage();}
-  else if(text){await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text,message_type:'text'})});}
-  document.getElementById('chatTextInput').value='';loadChatMessages(chatSessionId);
+
+function previewChatImage() {
+  var f = document.getElementById('chatFileInput').files[0];
+  if (!f) return;
+  chatFile = f;
+  var r = new FileReader();
+  r.onload = function(e){
+    document.getElementById('chatPreviewImg').src = e.target.result;
+    document.getElementById('chatImagePreview').style.display='flex';
+  };
+  r.readAsDataURL(f);
 }
 
-// ── ANALYTICS ──
-function setAnalyticsRange(r){analyticsRange=r;document.querySelectorAll('#page-analytics .filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.range===r));loadAnalytics();}
-function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
-function renderBar(cid,counts,colors){destroyChart(cid);const entries=Object.entries(counts||{}).sort((a,b)=>b[1]-a[1]);const ctx=document.getElementById(cid).getContext('2d');chartInstances[cid]=new Chart(ctx,{type:'bar',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:colors||entries.map((_,i)=>['#5DCAA5','#4D8FD9','#D96B8C','#7F77DD','#38B2AC','#D85A30','#C79B45'][i%7]),borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#999'},grid:{display:false}},y:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}}}});}
-function renderDoughnut(cid,counts){destroyChart(cid);const entries=Object.entries(counts||{}).sort((a,b)=>b[1]-a[1]);const ctx=document.getElementById(cid).getContext('2d');chartInstances[cid]=new Chart(ctx,{type:'doughnut',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:entries.map((_,i)=>['#C79B45','#7F77DD','#5DCAA5','#D85A30','#4D8FD9','#D96B8C','#38B2AC'][i%7]),borderColor:'#0f0e12',borderWidth:2}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#ccc',font:{size:11}}}}}});}
+function clearChatImage() {
+  chatFile = null;
+  document.getElementById('chatImagePreview').style.display='none';
+  document.getElementById('chatFileInput').value='';
+}
 
-async function loadAnalytics(){
-  const res=await fetch(API+'/analytics/overview?range='+analyticsRange);analyticsData=await res.json();
-  document.getElementById('analyticsKpiRow').innerHTML=[{l:'Sessions',v:analyticsData.funnel.totalSessionsStarted},{l:'Analysis',v:analyticsData.funnel.sessionsThatReachedAnalysis},{l:'Outfits',v:analyticsData.funnel.outfitsSent},{l:'Pending',v:analyticsData.funnel.currentlyPending}].map(k=>'<div class="kpi-card"><div class="label">'+k.l+'</div><div class="value">'+k.v+'</div></div>').join('');
-  destroyChart('funnelChart');const ctx=document.getElementById('funnelChart').getContext('2d');chartInstances['funnelChart']=new Chart(ctx,{type:'bar',data:{labels:['Started','Analysis','Outfits'],datasets:[{data:[analyticsData.funnel.totalSessionsStarted,analyticsData.funnel.sessionsThatReachedAnalysis,analyticsData.funnel.outfitsSent],backgroundColor:['#5DCAA5','#4D8FD9','#7F77DD'],borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#ccc'},grid:{display:false}}}});
+async function sendChatMessage() {
+  var text = document.getElementById('chatTextInput').value.trim();
+  if (!text && !chatFile) return;
+  if (chatFile) {
+    var form = new FormData();
+    form.append('file',chatFile);
+    var upRes = await fetch(API+'/upload',{method:'POST',body:form}).then(function(r){return r.json();}).catch(function(){return null;});
+    var imgUrl = upRes?upRes.url:'';
+    if (imgUrl) {
+      await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text||'🖼 Outfit',message_type:'image',image_url:imgUrl})});
+    }
+    clearChatImage();
+  } else if (text) {
+    await fetch(API+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:chatSessionId,sender:'admin',message:text,message_type:'text'})});
+  }
+  document.getElementById('chatTextInput').value='';
+  loadChatMessages(chatSessionId);
+}
+
+function setAnalyticsRange(r) {
+  analyticsRange = r;
+  document.querySelectorAll('#page-analytics .filter-chip').forEach(function(c){c.classList.toggle('active',c.dataset.range===r);});
+  loadAnalytics();
+}
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function renderBar(cid,counts,colors) {
+  destroyChart(cid);
+  var entries = Object.entries(counts||{}).sort(function(a,b){return b[1]-a[1];});
+  var ctx = document.getElementById(cid).getContext('2d');
+  chartInstances[cid] = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: entries.map(function(e){return e[0];}),
+      datasets:[{
+        data: entries.map(function(e){return e[1];}),
+        backgroundColor: colors||entries.map(function(_,i){return ['#5DCAA5','#4D8FD9','#D96B8C','#7F77DD','#38B2AC','#D85A30','#C79B45'][i%7];}),
+        borderRadius:6
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#999'},grid:{display:false}},
+        y:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+}
+
+function renderDoughnut(cid,counts) {
+  destroyChart(cid);
+  var entries = Object.entries(counts||{}).sort(function(a,b){return b[1]-a[1];});
+  var ctx = document.getElementById(cid).getContext('2d');
+  chartInstances[cid] = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels: entries.map(function(e){return e[0];}),
+      datasets:[{
+        data: entries.map(function(e){return e[1];}),
+        backgroundColor: entries.map(function(_,i){return ['#C79B45','#7F77DD','#5DCAA5','#D85A30','#4D8FD9','#D96B8C','#38B2AC'][i%7];}),
+        borderColor:'#0f0e12',
+        borderWidth:2
+      }]
+    },
+    options:{
+      plugins:{legend:{position:'bottom',labels:{color:'#ccc',font:{size:11}}}}
+    }
+  });
+}
+
+async function loadAnalytics() {
+  var res = await fetch(API+'/analytics/overview?range='+analyticsRange);
+  analyticsData = await res.json();
+  document.getElementById('analyticsKpiRow').innerHTML = [
+    {l:'Sessions',v:analyticsData.funnel.totalSessionsStarted},
+    {l:'Analysis',v:analyticsData.funnel.sessionsThatReachedAnalysis},
+    {l:'Outfits',v:analyticsData.funnel.outfitsSent},
+    {l:'Pending',v:analyticsData.funnel.currentlyPending}
+  ].map(function(k){return '<div class="kpi-card"><div class="label">'+k.l+'</div><div class="value">'+k.v+'</div></div>';}).join('');
+  destroyChart('funnelChart');
+  var ctx = document.getElementById('funnelChart').getContext('2d');
+  chartInstances['funnelChart'] = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Started','Analysis','Outfits'],
+      datasets:[{
+        data:[analyticsData.funnel.totalSessionsStarted,analyticsData.funnel.sessionsThatReachedAnalysis,analyticsData.funnel.outfitsSent],
+        backgroundColor:['#5DCAA5','#4D8FD9','#7F77DD'],
+        borderRadius:6
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#999',precision:0},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#ccc'},grid:{display:false}}
+      }
+    }
+  });
   renderBar('hourChart',analyticsData.hourCounts);
   renderDoughnut('goalChart',analyticsData.goalCounts);
   renderDoughnut('occasionChart',analyticsData.occasionCounts);
   renderBar('styleChart',analyticsData.styleCounts);
 }
 
-function downloadCSV(){
-  if(!analyticsData||!analyticsData.sessions){alert('No data loaded.');return;}
-  const rows=analyticsData.sessions.map(s=>[s.name||'',s.goal||'',s.occasion||'',s.style||'',s.is_pro?'Yes':'No',s.created_at||''].join(','));
-  const csv='Name,Goal,Occasion,Style,Pro,Created\n'+rows.join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='triofit-analytics-'+analyticsRange+'.csv';a.click();
+function downloadCSV() {
+  if (!analyticsData||!analyticsData.sessions) { alert('No data loaded.'); return; }
+  var rows = analyticsData.sessions.map(function(s){
+    return [s.name||'',s.goal||'',s.occasion||'',s.style||'',s.is_pro?'Yes':'No',s.created_at||''].join(',');
+  });
+  var csv = 'Name,Goal,Occasion,Style,Pro,Created\n'+rows.join('\n');
+  var blob = new Blob([csv],{type:'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'triofit-analytics-'+analyticsRange+'.csv';
+  a.click();
 }
 
-// ── INIT ──
-loadQueue();loadTemplates();
+loadQueue();
+loadTemplates();
 setInterval(loadQueue,8000);
 </script>
 </body>
