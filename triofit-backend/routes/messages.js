@@ -47,8 +47,21 @@ router.post("/chat", async (req, res) => {
   try {
     const { session_id, profile, messages } = req.body;
 
+    // ★ Save the last user message to the database BEFORE calling Groq
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUserMessage) {
+      await supabase.from("messages").insert({
+        session_id,
+        sender: "user",
+        message: lastUserMessage.text,
+        message_type: "text",
+      });
+    }
+
+    // Get AI reply from Groq
     const reply = await chatCompletion(messages);
 
+    // Save the AI reply
     await supabase.from("messages").insert({
       session_id,
       sender: "admin",
