@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import LangToggle from "../components/shared/LangToggle";
@@ -9,6 +9,14 @@ export default function NameEntry() {
   const [lang, setLangState] = useState(useLang());
   const s = t(lang);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const existingName = localStorage.getItem("tf_name");
+    const existingGoal = localStorage.getItem("tf_goal");
+    if (existingName && existingGoal) {
+      navigate("/conversation", { replace: true });
+    }
+  }, []);
 
   function submit() {
     const trimmed = name.trim();
