@@ -8,6 +8,7 @@ import ThemeToggle from "../components/shared/ThemeToggle";
 import LangToggle from "../components/shared/LangToggle";
 import ProModal from "../components/shared/ProModal";
 import StarRatingModal from "../components/shared/StarRatingModal";
+import SideMenu from "../components/shared/SideMenu";
 import { sb } from "../lib/supabase";
 import { useLang, t } from "../lib/i18n";
 
@@ -353,7 +354,7 @@ function QuickAdvice({ s, tips }) {
   );
 }
 
-function MessageActions({ text }) {
+function MessageActions({ text, sessionId }) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(null);
   const [playing, setPlaying] = useState(false);
@@ -452,7 +453,6 @@ function MessageActions({ text }) {
             style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }}
           />
         </button>
-        {/* Feedback button */}
         <button
           onClick={() => setShowFeedback(!showFeedback)}
           style={iconBtn}
@@ -553,6 +553,7 @@ export default function Conversation() {
   const [chatListening, setChatListening] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [awaitingRevealChoice, setAwaitingRevealChoice] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [ratingType, setRatingType] = useState(null);
   const [outfitReceived, setOutfitReceived] = useState(false);
@@ -807,29 +808,29 @@ export default function Conversation() {
     recognition.start();
   }
 
- function sendFreeText() {
-  if (!input.trim()) return;
-  const text = input.trim();
-  setInput("");
-  pushUser(text);
-  axios
-    .post(`${BACKEND}/chat`, {
-      session_id: sessionId,
-      profile,
-      messages: [...messages.filter((m) => m.text), { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
-      lang,
-      goal,
-    })
-    .then((res) => {
-      if (res.data.limitReached) {
-        setMessages((m) => [...m, { role: "assistant", text: s.limitReached || "You've reached the daily limit. Upgrade to Pro for unlimited access." }]);
-        setProOpen(true);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]);
-      }
-    })
-    .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
-}
+  function sendFreeText() {
+    if (!input.trim()) return;
+    const text = input.trim();
+    setInput("");
+    pushUser(text);
+    axios
+      .post(`${BACKEND}/chat`, {
+        session_id: sessionId,
+        profile,
+        messages: [...messages.filter((m) => m.text), { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
+        lang,
+        goal,
+      })
+      .then((res) => {
+        if (res.data.limitReached) {
+          setMessages((m) => [...m, { role: "assistant", text: s.limitReached || "You've reached the daily limit. Upgrade to Pro for unlimited access." }]);
+          setProOpen(true);
+        } else {
+          setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]);
+        }
+      })
+      .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
+  }
 
   const showIntake = stage === "intake";
 
@@ -842,6 +843,16 @@ export default function Conversation() {
           display: "flex", alignItems: "center", gap: 10,
         }}
       >
+        <button
+          onClick={() => setMenuOpen(true)}
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4,
+          }}
+          aria-label="Menu"
+        >
+          <i className="ti ti-menu-2" style={{ fontSize: 18 }} />
+        </button>
         <button
           onClick={() => navigate(-1)}
           style={{
@@ -862,7 +873,6 @@ export default function Conversation() {
       <LangToggle lang={lang} onChange={setLangState} />
       <ChatBackground />
 
-      {/* Centered chat container */}
       <div style={{ maxWidth: 720, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 relative" style={{ zIndex: 1 }}>
           <AnimatePresence>
@@ -898,7 +908,7 @@ export default function Conversation() {
                     {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
                     <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
                   </div>
-                  {m.role === "assistant" && i > 0 && <MessageActions text={m.text} />}
+                  {m.role === "assistant" && i > 0 && <MessageActions text={m.text} sessionId={sessionId} />}
                 </motion.div>
               );
             })}
@@ -993,6 +1003,8 @@ export default function Conversation() {
       />
 
       <ProModal open={proOpen} onClose={() => setProOpen(false)} lang={lang} />
+
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} s={s} />
     </div>
   );
 }
