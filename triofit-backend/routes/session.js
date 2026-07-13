@@ -98,4 +98,17 @@ router.patch("/session/:id/pro-status", async (req, res) => {
   res.json({ ok: true, is_pro });
 });
 
+// ── STORE INTEREST ──
+router.post("/store-interest", async (req, res) => {
+  const { business_name, business_type, contact, city } = req.body;
+  const { data, error } = await supabase
+    .from("store_interest")
+    .insert({ business_name, business_type, contact, city })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 export default router;
