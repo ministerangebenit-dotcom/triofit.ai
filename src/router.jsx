@@ -4,6 +4,9 @@ import Landing from "./pages/Landing";
 import NameEntry from "./pages/NameEntry";
 import GoalScreen from "./pages/GoalScreen";
 import Conversation from "./pages/Conversation";
+import About from "./pages/About";
+import RegisterStore from "./pages/RegisterStore";
+import YourFits from "./pages/YourFits";
 
 export default function Router() {
   return (
@@ -13,6 +16,9 @@ export default function Router() {
         <Route path="/name" element={<NameEntry />} />
         <Route path="/goal" element={<GoalScreen />} />
         <Route path="/conversation" element={<Conversation />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/register-store" element={<RegisterStore />} />
+        <Route path="/yourfits" element={<YourFits />} />
       </Route>
     </Routes>
   );
