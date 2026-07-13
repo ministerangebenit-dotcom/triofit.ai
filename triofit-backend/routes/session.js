@@ -8,17 +8,41 @@ const PRO_DAILY_LIMIT = 10;
 
 router.post("/session", async (req, res) => {
   const { session_id, name, gender, age, style, occasion, goal, situation } = req.body;
+
+  // Check if this session already exists
+  const { data: existing } = await supabase
+    .from("sessions")
+    .select("visit_count")
+    .eq("session_id", session_id)
+    .single();
+
+  const isNew = !existing;
+  const visitCount = isNew ? 1 : (existing.visit_count || 0) + 1;
+
   const { data, error } = await supabase
     .from("sessions")
     .upsert(
-      { session_id, name, gender, age, style, occasion, goal, situation, updated_at: new Date().toISOString() },
+      {
+        session_id,
+        name,
+        gender,
+        age,
+        style,
+        occasion,
+        goal,
+        situation,
+        visit_count: visitCount,
+        first_seen: isNew ? new Date().toISOString() : undefined,
+        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "session_id" }
     )
     .select()
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.json({ ...data, isNew });
 });
 
 router.get("/session/:id", async (req, res) => {
@@ -109,6 +133,31 @@ router.post("/store-interest", async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// ── NEW vs RETURNING STATS ──
+router.get("/session-stats/today", async (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // New today: first_seen is today
+  const { count: newToday } = await supabase
+    .from("sessions")
+    .select("*", { count: "exact", head: true })
+    .gte("first_seen", today + "T00:00:00Z")
+    .lte("first_seen", today + "T23:59:59Z");
+
+  // Returning today: last_seen is today AND visit_count > 1
+  const { count: returningToday } = await supabase
+    .from("sessions")
+    .select("*", { count: "exact", head: true })
+    .gte("last_seen", today + "T00:00:00Z")
+    .lte("last_seen", today + "T23:59:59Z")
+    .gt("visit_count", 1);
+
+  res.json({
+    newToday: newToday || 0,
+    returningToday: returningToday || 0,
+  });
 });
 
 export default router;
