@@ -807,21 +807,29 @@ export default function Conversation() {
     recognition.start();
   }
 
-  function sendFreeText() {
-    if (!input.trim()) return;
-    const text = input.trim();
-    setInput("");
-    pushUser(text);
-    axios
-      .post(`${BACKEND}/chat`, {
-        session_id: sessionId,
-        profile,
-        messages: [...messages.filter((m) => m.text), { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
-        lang,
-      })
-      .then((res) => setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]))
-      .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
-  }
+ function sendFreeText() {
+  if (!input.trim()) return;
+  const text = input.trim();
+  setInput("");
+  pushUser(text);
+  axios
+    .post(`${BACKEND}/chat`, {
+      session_id: sessionId,
+      profile,
+      messages: [...messages.filter((m) => m.text), { role: "user", text }].map((m) => ({ role: m.role, text: m.text })),
+      lang,
+      goal,
+    })
+    .then((res) => {
+      if (res.data.limitReached) {
+        setMessages((m) => [...m, { role: "assistant", text: s.limitReached || "You've reached the daily limit. Upgrade to Pro for unlimited access." }]);
+        setProOpen(true);
+      } else {
+        setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]);
+      }
+    })
+    .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
+}
 
   const showIntake = stage === "intake";
 
