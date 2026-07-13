@@ -84,7 +84,7 @@
   .queue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
   .queue-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
   .queue-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .queue-card .name { font-size: 15px; font-weight: 600; }
+  .queue-card .name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .queue-card .meta-row { font-size: 11px; color: var(--text-dim); display: flex; gap: 12px; flex-wrap: wrap; }
   .confidence-badge { padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 600; }
   .confidence-badge.high { background: rgba(93,202,165,0.1); color: var(--green); }
@@ -184,8 +184,14 @@
 
 <div class="main">
 
+  <!-- QUEUE PAGE -->
   <div class="page active" id="page-queue">
     <div class="page-header"><div><h2>Live Queue</h2><div class="subtitle" id="queueSubtitle">Loading…</div></div><button class="btn-secondary" onclick="loadQueue()">Refresh</button></div>
+    <div class="kpi-row" id="queueKpiRow">
+      <div class="kpi-card"><div class="label">Pending</div><div class="value" id="kpiPending">—</div></div>
+      <div class="kpi-card"><div class="label">New today</div><div class="value" id="kpiNewToday">—</div></div>
+      <div class="kpi-card"><div class="label">Returning today</div><div class="value" id="kpiReturningToday">—</div></div>
+    </div>
     <div class="toolbar">
       <input class="search-box" id="searchBox" placeholder="Search…" oninput="renderQueue()">
       <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
@@ -196,6 +202,7 @@
     <div id="queueEmpty" style="display:none;text-align:center;color:var(--text-muted);padding:30px;">Queue is clear. Great work.</div>
   </div>
 
+  <!-- TEMPLATES PAGE -->
   <div class="page" id="page-templates">
     <div class="page-header"><div><h2>Templates</h2><div class="subtitle" id="templateSubtitle">Loading…</div></div><button class="btn-primary" onclick="openTemplateForm()">+ Add template</button></div>
     <div class="template-form" id="templateForm" style="display:none;"><h3 id="templateFormTitle">New template</h3>
@@ -211,6 +218,7 @@
     <div class="template-grid" id="templateGrid"></div>
   </div>
 
+  <!-- CHAT PAGE -->
   <div class="page" id="page-chat">
     <div class="page-header"><div><h2>Chat</h2><div class="subtitle">Send messages and outfits to users</div></div></div>
     <div class="chat-layout">
@@ -230,6 +238,7 @@
     </div>
   </div>
 
+  <!-- ANALYTICS PAGE -->
   <div class="page" id="page-analytics">
     <div class="page-header"><div><h2>Analytics</h2><div class="subtitle">Understand your users</div></div><div style="display:flex;gap:8px;">
       <button class="filter-chip active" data-range="all" onclick="setAnalyticsRange('all')">All time</button>
@@ -262,10 +271,19 @@ function showPage(p) {
   document.querySelectorAll('.sidebar-nav button').forEach(function(b){b.classList.remove('active');});
   var btn = document.querySelector('[data-page="'+p+'"]');
   if (btn) btn.classList.add('active');
-  if (p==='queue') loadQueue();
+  if (p==='queue') { loadQueue(); loadSessionStats(); }
   if (p==='templates') loadTemplates();
   if (p==='chat') loadChatUsers();
   if (p==='analytics') loadAnalytics();
+}
+
+async function loadSessionStats() {
+  try {
+    var res = await fetch(API + '/session-stats/today');
+    var data = await res.json();
+    document.getElementById('kpiNewToday').textContent = data.newToday || 0;
+    document.getElementById('kpiReturningToday').textContent = data.returningToday || 0;
+  } catch(e) { /* ignore */ }
 }
 
 async function loadQueue() {
@@ -273,6 +291,8 @@ async function loadQueue() {
   allTemplatesCache = await fetch(API+'/templates').then(function(r){return r.json();}).catch(function(){return [];});
   document.getElementById('queueBadge').textContent = queueCache.length;
   document.getElementById('queueSubtitle').textContent = queueCache.length + ' waiting';
+  document.getElementById('kpiPending').textContent = queueCache.length;
+  loadSessionStats();
   renderQueue();
 }
 
@@ -297,7 +317,11 @@ function renderQueue() {
     var sess = i.sessions||{};
     var tmpl = i.outfit_templates;
     var conf = i.ai_confidence||0;
-    var h = '<div class="queue-card"><div class="header"><div><div class="name">'+(sess.name||'?')+'</div><div class="meta-row"><span>🎯'+(sess.goal||'—')+'</span><span>👔'+(sess.style||'—')+'</span><span>📍'+(sess.occasion||'—')+'</span></div></div><div class="confidence-badge '+((conf>=85)?'high':(conf>=65)?'mid':'low')+'">'+conf+'%</div></div>';
+    var isNew = (sess.visit_count || 0) <= 1;
+    var visitorBadge = isNew
+      ? '<span style="background:rgba(93,202,165,0.15);color:#5DCAA5;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;">New</span>'
+      : '<span style="background:rgba(199,155,69,0.12);color:#C79B45;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;">Returning</span>';
+    var h = '<div class="queue-card"><div class="header"><div><div class="name">'+(sess.name||'?')+visitorBadge+'</div><div class="meta-row"><span>🎯'+(sess.goal||'—')+'</span><span>👔'+(sess.style||'—')+'</span><span>📍'+(sess.occasion||'—')+'</span></div></div><div class="confidence-badge '+((conf>=85)?'high':(conf>=65)?'mid':'low')+'">'+conf+'%</div></div>';
     if (tmpl) {
       h += '<div class="suggestion"><img src="'+tmpl.image_url+'" onerror="this.style.display=\'none\'"><div>'+tmpl.description+'</div></div><div class="actions"><button class="btn-primary" onclick="sendSuggested(\''+i.session_id+'\')">✓ Send</button><button class="btn-secondary" onclick="togglePicker(\''+i.session_id+'\')">↻ Change</button><button class="btn-view" onclick="openChatWith(\''+i.session_id+'\')">💬 Chat</button></div><div class="picker-panel" id="picker-'+i.session_id+'">'+allTemplatesCache.map(function(t){return '<div class="picker-item" onclick="sendOverride(\''+i.session_id+'\',\''+t.id+'\')"><img src="'+t.image_url+'" onerror="this.style.display=\'none\'"><div>'+t.description+'</div></div>';}).join('')+'</div>';
     } else {
