@@ -2,6 +2,7 @@ import express from "express";
 import { chatCompletion } from "../lib/groq.js";
 import { scoreProfile } from "../lib/scoring.js";
 import { supabase } from "../lib/supabase.js";
+import { getPersonaPrompt } from "../lib/personas.js";
 
 const router = express.Router();
 
@@ -9,26 +10,9 @@ router.post("/extract", async (req, res) => {
   try {
     const { situation, goal, lang } = req.body;
 
-    const prompt = `A person is using a perception-coaching app. Their goal: "${goal}". They described their situation in their own words:
+    const prompt = `A person is using a perception-coaching app. Their goal: "${goal}". They described their situation in their own words:\n\n"${situation}"\n\nExtract the following as best you can infer. If gender genuinely cannot be inferred from what they wrote, write "unclear" for gender only — but you MUST pick the closest matching OCCASION from the fixed list below, never invent your own phrase.\n\nOCCASION must be exactly one of these five, verbatim:\n- A professional interview\n- An evening out\n- A wedding\n- Everyday office wear\n- A casual event\n\nGENDER: [Male/Female/unclear]\nAGE_RANGE: [18-24/25-34/35-44/45+/unclear]\nSTYLE: [one short phrase describing their natural style, e.g. "Classic & elegant"]\nOCCASION: [must exactly match one of the five options above]\nSUMMARY: [one sentence restating their situation back to them, in second person]`;
 
-"${situation}"
-
-Extract the following as best you can infer. If gender genuinely cannot be inferred from what they wrote, write "unclear" for gender only — but you MUST pick the closest matching OCCASION from the fixed list below, never invent your own phrase.
-
-OCCASION must be exactly one of these five, verbatim:
-- A professional interview
-- An evening out
-- A wedding
-- Everyday office wear
-- A casual event
-
-GENDER: [Male/Female/unclear]
-AGE_RANGE: [18-24/25-34/35-44/45+/unclear]
-STYLE: [one short phrase describing their natural style, e.g. "Classic & elegant"]
-OCCASION: [must exactly match one of the five options above]
-SUMMARY: [one sentence restating their situation back to them, in second person]`;
-
-    const raw = await chatCompletion([{ role: "user", text: prompt }], undefined, 2, lang || "en");
+    const raw = await chatCompletion([{ role: "user", text: prompt }], getPersonaPrompt(goal), 2, lang || "en");
 
     const extract = (label) => {
       const match = raw.match(new RegExp(`${label}:\\s*(.+)`));
@@ -53,21 +37,9 @@ router.post("/analysis", async (req, res) => {
   try {
     const { session_id, profile, goal, situation, lang } = req.body;
 
-    const prompt = `Person's situation, in their own words: "${situation}"
-Their goal: "${goal}"
-Inferred profile: ${JSON.stringify(profile)}.
+    const prompt = `Person's situation, in their own words: "${situation}"\nTheir goal: "${goal}"\nInferred profile: ${JSON.stringify(profile)}.\n\nWrite a perception analysis in this exact format, no extra text. Address the person directly as "you" throughout — never refer to them as "the user" or in third person.\n\nIMPRESSION: [2 sentences on how you come across, based strictly on what you said, addressed directly to the person as "you"]\nREASON1: [one specific thing from your own words that supports this, addressed as "you"]\nREASON2: [another specific thing from your own words, addressed as "you"]\nSTRONG1: [one word trait]\nSTRONG2: [one word trait]\nCAUTION1: [one short cautionary trait]\nPREDICTION: [1-2 sentences estimating the likelihood your goal is achieved with your current approach, addressed as "you", framed as an estimate not certainty]`;
 
-Write a perception analysis in this exact format, no extra text. Address the person directly as "you" throughout — never refer to them as "the user" or in third person.
-
-IMPRESSION: [2 sentences on how you come across, based strictly on what you said, addressed directly to the person as "you"]
-REASON1: [one specific thing from your own words that supports this, addressed as "you"]
-REASON2: [another specific thing from your own words, addressed as "you"]
-STRONG1: [one word trait]
-STRONG2: [one word trait]
-CAUTION1: [one short cautionary trait]
-PREDICTION: [1-2 sentences estimating the likelihood your goal is achieved with your current approach, addressed as "you", framed as an estimate not certainty]`;
-
-    const raw = await chatCompletion([{ role: "user", text: prompt }], undefined, 2, lang || "en");
+    const raw = await chatCompletion([{ role: "user", text: prompt }], getPersonaPrompt(goal), 2, lang || "en");
 
     const extract = (label) => {
       const match = raw.match(new RegExp(`${label}:\\s*(.+)`));
@@ -105,17 +77,9 @@ router.post("/refine-questions", async (req, res) => {
   try {
     const { situation, goal, profile, lang } = req.body;
 
-    const prompt = `Situation: "${situation}". Goal: "${goal}". Profile so far: ${JSON.stringify(profile)}.
+    const prompt = `Situation: "${situation}". Goal: "${goal}". Profile so far: ${JSON.stringify(profile)}.\n\nGenerate exactly 2 short, targeted follow-up questions that would meaningfully improve an outfit recommendation for this specific person and situation. Each question needs 3-4 short multiple choice options.\n\nReply in exactly this format:\nQ1: [question text]\nO1: [option]|[option]|[option]\nQ2: [question text]\nO2: [option]|[option]|[option]`;
 
-Generate exactly 2 short, targeted follow-up questions that would meaningfully improve an outfit recommendation for this specific person and situation. Each question needs 3-4 short multiple choice options.
-
-Reply in exactly this format:
-Q1: [question text]
-O1: [option]|[option]|[option]
-Q2: [question text]
-O2: [option]|[option]|[option]`;
-
-    const raw = await chatCompletion([{ role: "user", text: prompt }], undefined, 2, lang || "en");
+    const raw = await chatCompletion([{ role: "user", text: prompt }], getPersonaPrompt(goal), 2, lang || "en");
 
     const q1 = raw.match(/Q1:\s*(.+)/)?.[1]?.trim() || "What's the dress code?";
     const o1 = raw.match(/O1:\s*(.+)/)?.[1]?.trim().split("|").map((s) => s.trim()) || ["Formal", "Business casual", "Casual"];
@@ -138,16 +102,9 @@ router.post("/quick-advice", async (req, res) => {
   try {
     const { situation, goal, lang } = req.body;
 
-    const prompt = `Situation: "${situation}". Goal: "${goal}". They've chosen not to change their outfit.
+    const prompt = `Situation: "${situation}". Goal: "${goal}". They've chosen not to change their outfit.\n\nGive 3 short, concrete, non-clothing actions that would still improve how they're perceived in this situation. No preamble, just the 3 items, each under 15 words.\n\nReply in exactly this format:\nTIP1: [tip]\nTIP2: [tip]\nTIP3: [tip]`;
 
-Give 3 short, concrete, non-clothing actions that would still improve how they're perceived in this situation. No preamble, just the 3 items, each under 15 words.
-
-Reply in exactly this format:
-TIP1: [tip]
-TIP2: [tip]
-TIP3: [tip]`;
-
-    const raw = await chatCompletion([{ role: "user", text: prompt }], undefined, 2, lang || "en");
+    const raw = await chatCompletion([{ role: "user", text: prompt }], getPersonaPrompt(goal), 2, lang || "en");
 
     const tips = [
       raw.match(/TIP1:\s*(.+)/)?.[1]?.trim(),
