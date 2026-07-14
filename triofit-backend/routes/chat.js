@@ -9,51 +9,104 @@ router.post("/", async (req, res) => {
   try {
     const {
       session_id,
-      messages,
+      messages = [],
       goal,
-      profile,
-      analysis,
-      lang,
+      lang = "en",
     } = req.body;
 
-    const personaPrompt = getPersonaPrompt(goal);
+    // Load session
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("goal, situation, profile")
+      .eq("session_id", session_id)
+      .single();
+
+    // Load previous perception analysis
+    const { data: analysisRow } = await supabase
+      .from("messages")
+      .select("message")
+      .eq("session_id", session_id)
+      .eq("message_type", "analysis")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let previousAnalysis = "";
+
+    if (analysisRow?.message) {
+      try {
+        const parsed = JSON.parse(analysisRow.message);
+
+        previousAnalysis = `
+Previous perception analysis:
+
+Impression:
+${parsed.impression}
+
+Reasons:
+${(parsed.reasons || []).join("\n")}
+
+Strengths:
+${parsed.traits?.strong?.join(", ") || ""}
+
+Caution:
+${parsed.traits?.caution?.join(", ") || ""}
+
+Prediction:
+${parsed.prediction}
+`;
+      } catch {}
+    }
+
+    const personaPrompt = getPersonaPrompt(goal || session?.goal);
 
     const context = `
-You are continuing an existing TRIOFIT coaching session.
+You are continuing an existing coaching conversation.
 
-The user has ALREADY completed their perception analysis.
+Never restart.
+
+Never introduce yourself.
+
+Never repeat the perception analysis unless asked.
+
+Everything below is already known.
 
 USER GOAL:
-${goal || "unknown"}
+${goal || session?.goal || "Unknown"}
 
-PROFILE:
-${JSON.stringify(profile || {})}
+USER SITUATION:
+${session?.situation || "Unknown"}
 
-PERCEPTION ANALYSIS:
-${JSON.stringify(analysis || {})}
+USER PROFILE:
+${JSON.stringify(session?.profile || {}, null, 2)}
+
+${previousAnalysis}
 
 Conversation rules:
 
-- Continue naturally from the analysis.
-- Never restart the consultation.
-- Never ask for information already known.
-- If clothing is NOT the user's biggest obstacle, say so honestly.
-- If behaviour matters more than clothing, coach behaviour.
-- If communication matters more, coach communication.
-- If confidence matters more, coach confidence.
-- If clothing remains the limiting factor, explain WHY before recommending clothes.
-- Be practical.
-- Challenge bad assumptions.
-- Never flatter.
-- Never invent facts.
-- Speak like a world-class consultant whose reputation depends on accuracy.
+- Continue naturally from the previous analysis.
+- Assume the user has already read the perception report.
+- If they ask "why?" explain your reasoning.
+- If they ask for advice, adapt it to this specific person.
+- Clothing is only one variable.
+- If behaviour, confidence, communication, etiquette or preparation matter more, say so.
+- When recommending clothing, explain WHY it changes perception.
+- Never ask for information you already know.
+- Avoid generic advice.
+- Speak with confidence but never certainty.
 `;
 
     const reply = await chatCompletion(
-      messages,
-      personaPrompt + "\n\n" + context,
+      [
+        {
+          role: "user",
+          text: context,
+        },
+        ...messages,
+      ],
+      personaPrompt,
       2,
-      lang || "en"
+      lang
     );
 
     await supabase.from("messages").insert({
@@ -66,8 +119,9 @@ Conversation rules:
     res.json({ reply });
   } catch (err) {
     console.error(err);
+
     res.status(500).json({
-      reply: "AI error",
+      reply: "Sorry, something went wrong. Please try again.",
     });
   }
 });
