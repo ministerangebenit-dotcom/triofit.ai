@@ -9,6 +9,7 @@ import LangToggle from "../components/shared/LangToggle";
 import ProModal from "../components/shared/ProModal";
 import StarRatingModal from "../components/shared/StarRatingModal";
 import SideMenu from "../components/shared/SideMenu";
+import StreamingText from "../components/chat/StreamingText";
 import { sb } from "../lib/supabase";
 import { useLang, t } from "../lib/i18n";
 
@@ -422,46 +423,19 @@ function MessageActions({ text, sessionId }) {
     <div style={{ marginTop: 6, marginLeft: 2 }}>
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={copyText} style={iconBtn} aria-label="Copy">
-          <i
-            className={copied ? "ti ti-check" : "ti ti-copy"}
-            style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }}
-          />
+          <i className={copied ? "ti ti-check" : "ti ti-copy"} style={{ color: copied ? "var(--gold)" : "var(--text-dim)" }} />
         </button>
         <button onClick={playVoice} style={iconBtn} aria-label="Play">
-          <i
-            className={playing ? "ti ti-player-pause" : "ti ti-player-play"}
-            style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }}
-          />
+          <i className={playing ? "ti ti-player-pause" : "ti ti-player-play"} style={{ color: playing ? "var(--gold)" : "var(--text-dim)" }} />
         </button>
-        <button
-          onClick={() => setLiked(liked === "up" ? null : "up")}
-          style={iconBtn}
-          aria-label="Like"
-        >
-          <i
-            className="ti ti-thumb-up"
-            style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }}
-          />
+        <button onClick={() => setLiked(liked === "up" ? null : "up")} style={iconBtn} aria-label="Like">
+          <i className="ti ti-thumb-up" style={{ color: liked === "up" ? "var(--gold)" : "var(--text-dim)" }} />
         </button>
-        <button
-          onClick={() => setLiked(liked === "down" ? null : "down")}
-          style={iconBtn}
-          aria-label="Dislike"
-        >
-          <i
-            className="ti ti-thumb-down"
-            style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }}
-          />
+        <button onClick={() => setLiked(liked === "down" ? null : "down")} style={iconBtn} aria-label="Dislike">
+          <i className="ti ti-thumb-down" style={{ color: liked === "down" ? "var(--gold)" : "var(--text-dim)" }} />
         </button>
-        <button
-          onClick={() => setShowFeedback(!showFeedback)}
-          style={iconBtn}
-          aria-label="Feedback"
-        >
-          <i
-            className="ti ti-message"
-            style={{ color: showFeedback ? "var(--gold)" : "var(--text-dim)" }}
-          />
+        <button onClick={() => setShowFeedback(!showFeedback)} style={iconBtn} aria-label="Feedback">
+          <i className="ti ti-message" style={{ color: showFeedback ? "var(--gold)" : "var(--text-dim)" }} />
         </button>
       </div>
 
@@ -470,54 +444,29 @@ function MessageActions({ text, sessionId }) {
           <input
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendFeedback();
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") sendFeedback(); }}
             placeholder="Quick feedback..."
             disabled={feedbackSent}
             style={{
-              flex: 1,
-              background: "var(--surface)",
-              border: "1px solid var(--border-soft)",
-              borderRadius: 20,
-              padding: "6px 14px",
-              fontSize: 12,
-              color: "var(--text)",
-              outline: "none",
+              flex: 1, background: "var(--surface)", border: "1px solid var(--border-soft)",
+              borderRadius: 20, padding: "6px 14px", fontSize: 12, color: "var(--text)", outline: "none",
             }}
           />
           <button
             onClick={sendFeedback}
             disabled={!feedback.trim() || feedbackSent}
             style={{
-              background: feedback.trim() ? "var(--gold)" : "var(--surface-2)",
-              border: "none",
-              borderRadius: "50%",
-              width: 28,
-              height: 28,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: feedback.trim() ? "pointer" : "default",
-              flexShrink: 0,
+              background: feedback.trim() ? "var(--gold)" : "var(--surface-2)", border: "none",
+              borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center",
+              justifyContent: "center", cursor: feedback.trim() ? "pointer" : "default", flexShrink: 0,
             }}
             aria-label="Send feedback"
           >
-            <i
-              className="ti ti-arrow-up"
-              style={{
-                fontSize: 14,
-                color: feedback.trim() ? "#080808" : "var(--text-dim)",
-              }}
-            />
+            <i className="ti ti-arrow-up" style={{ fontSize: 14, color: feedback.trim() ? "#080808" : "var(--text-dim)" }} />
           </button>
         </div>
       )}
-      {feedbackSent && (
-        <div style={{ fontSize: 11, color: "var(--gold)", marginTop: 4 }}>
-          ✓ Thanks!
-        </div>
-      )}
+      {feedbackSent && <div style={{ fontSize: 11, color: "var(--gold)", marginTop: 4 }}>✓ Thanks!</div>}
     </div>
   );
 }
@@ -560,7 +509,6 @@ export default function Conversation() {
   const sessionCount = useRef(parseInt(localStorage.getItem("tf_session_count") || "0", 10));
 
   const analysisRatingTimer = useRef(null);
-
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, stage]);
@@ -577,22 +525,22 @@ export default function Conversation() {
     };
   }, []);
 
-  function messageFromRow(m) {
+  function messageFromRow(m, isFresh = false) {
     if (m.message_type === "analysis") {
       let parsed = null;
       try { parsed = JSON.parse(m.message); } catch { parsed = null; }
       return { role: "assistant", type: "analysis", analysis: parsed };
     }
     if (m.message_type === "image") {
-      return { role: "assistant", text: m.message, image: m.image_url };
+      return { role: "assistant", text: m.message, image: m.image_url, streamed: !isFresh };
     }
-    return { role: m.sender === "user" ? "user" : "assistant", text: m.message };
+    return { role: m.sender === "user" ? "user" : "assistant", text: m.message, streamed: !isFresh };
   }
 
   useEffect(() => {
     axios.get(`${BACKEND}/history/${sessionId}`).then((res) => {
       if (res.data.session && res.data.messages.length > 0) {
-        const restored = res.data.messages.map(messageFromRow);
+        const restored = res.data.messages.map((m) => messageFromRow(m, false));
         setMessages(restored);
         setProfile({
           gender: res.data.session.gender,
@@ -604,7 +552,7 @@ export default function Conversation() {
         setStage(hasImage ? "blueprint" : "post-history");
         setShowChatInput(true);
       } else {
-        const greetingMsg = { role: "assistant", text: s.greeting(userName) };
+        const greetingMsg = { role: "assistant", text: s.greeting(userName), streamed: false };
         setMessages([greetingMsg]);
         axios.post(`${BACKEND}/messages`, {
           session_id: sessionId,
@@ -615,7 +563,7 @@ export default function Conversation() {
         setStage("intake");
       }
     }).catch(() => {
-      setMessages([{ role: "assistant", text: s.greeting(userName) }]);
+      setMessages([{ role: "assistant", text: s.greeting(userName), streamed: false }]);
       setStage("intake");
     });
   }, []);
@@ -632,7 +580,7 @@ export default function Conversation() {
           setTimeout(() => setRatingType("outfit"), 2500);
         }
 
-        setMessages((msgs) => [...msgs, messageFromRow(m)]);
+        setMessages((msgs) => [...msgs, messageFromRow(m, true)]);
       })
       .subscribe();
 
@@ -670,7 +618,7 @@ export default function Conversation() {
       setProfile({ gender: res.data.gender, age: res.data.age, style: res.data.style, occasion: res.data.occasion });
       setStage("confirm");
     } catch {
-      setMessages((m) => [...m, { role: "assistant", text: s.extractTrouble }]);
+      setMessages((m) => [...m, { role: "assistant", text: s.extractTrouble, streamed: false }]);
       setStage("intake");
     }
   }
@@ -715,7 +663,7 @@ export default function Conversation() {
         .then((r) => setPrefetchedRefineQs(r.data.questions))
         .catch(() => {});
     } catch {
-      setMessages((m) => [...m, { role: "assistant", text: s.stylistBrainTrouble }]);
+      setMessages((m) => [...m, { role: "assistant", text: s.stylistBrainTrouble, streamed: false }]);
       setStage("post-history");
     }
   }
@@ -777,11 +725,11 @@ export default function Conversation() {
     try {
       const res = await axios.post(`${BACKEND}/templates/suggest`, { session_id: sessionId, profile: finalProfile || profile });
       if (!res.data.suggestion) {
-        setMessages((m) => [...m, { role: "assistant", text: s.noTemplateYet }]);
+        setMessages((m) => [...m, { role: "assistant", text: s.noTemplateYet, streamed: false }]);
       }
       setShowChatInput(true);
     } catch {
-      setMessages((m) => [...m, { role: "assistant", text: s.catalogTrouble }]);
+      setMessages((m) => [...m, { role: "assistant", text: s.catalogTrouble, streamed: false }]);
       setShowChatInput(true);
     }
   }
@@ -823,13 +771,13 @@ export default function Conversation() {
       })
       .then((res) => {
         if (res.data.limitReached) {
-          setMessages((m) => [...m, { role: "assistant", text: s.limitReached || "You've reached the daily limit. Upgrade to Pro for unlimited access." }]);
+          setMessages((m) => [...m, { role: "assistant", text: s.limitReached || "You've reached the daily limit. Upgrade to Pro for unlimited access.", streamed: false }]);
           setProOpen(true);
         } else {
-          setMessages((m) => [...m, { role: "assistant", text: res.data.reply }]);
+          setMessages((m) => [...m, { role: "assistant", text: res.data.reply, streamed: false }]);
         }
       })
-      .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue }]));
+      .catch(() => setMessages((m) => [...m, { role: "assistant", text: s.connectionIssue, streamed: false }]));
   }
 
   const showIntake = stage === "intake";
@@ -845,20 +793,14 @@ export default function Conversation() {
       >
         <button
           onClick={() => setMenuOpen(true)}
-          style={{
-            background: "transparent", border: "none", cursor: "pointer",
-            color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4,
-          }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }}
           aria-label="Menu"
         >
           <i className="ti ti-menu-2" style={{ fontSize: 18 }} />
         </button>
         <button
           onClick={() => navigate(-1)}
-          style={{
-            background: "transparent", border: "none", cursor: "pointer",
-            color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4,
-          }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-dim)", display: "flex", alignItems: "center", padding: 4 }}
           aria-label={s.backLabel}
         >
           <i className="ti ti-arrow-left" style={{ fontSize: 18 }} />
@@ -890,25 +832,44 @@ export default function Conversation() {
                   </div>
                 );
               }
+
+              if (m.role === "user") {
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-end"
+                  >
+                    <div
+                      style={{
+                        maxWidth: "78%", padding: "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
+                        background: "rgba(199,155,69,0.1)", border: "1px solid rgba(199,155,69,0.3)",
+                        color: "var(--text)",
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                  </motion.div>
+                );
+              }
+
               return (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                  className="flex flex-col items-start"
                 >
-                  <div
-                    style={{
-                      maxWidth: "78%", padding: m.image ? 6 : "11px 16px", borderRadius: 16, fontSize: 14, lineHeight: 1.6,
-                      background: m.role === "user" ? "rgba(199,155,69,0.1)" : "var(--surface)",
-                      border: m.role === "user" ? "1px solid rgba(199,155,69,0.3)" : "1px solid var(--border-soft)",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {m.image && <img src={m.image} alt="Outfit suggestion" style={{ width: "100%", borderRadius: 10, marginBottom: 8, display: "block" }} />}
-                    <div style={{ padding: m.image ? "0 8px 6px" : 0 }}>{m.text}</div>
+                  {m.image && <img src={m.image} alt="Outfit suggestion" style={{ maxWidth: "78%", borderRadius: 12, marginBottom: 8, display: "block" }} />}
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text)", maxWidth: "92%" }}>
+                    {m.streamed ? (
+                      m.text
+                    ) : (
+                      <StreamingText text={m.text} onDone={() => endRef.current?.scrollIntoView({ behavior: "smooth" })} />
+                    )}
                   </div>
-                  {m.role === "assistant" && i > 0 && <MessageActions text={m.text} sessionId={sessionId} />}
+                  <MessageActions text={m.text} sessionId={sessionId} />
                 </motion.div>
               );
             })}
@@ -918,10 +879,8 @@ export default function Conversation() {
 
           {stage === "extracting" && (
             <div className="flex justify-start items-center" style={{ gap: 8 }}>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-                <LogoOrb size={20} thinking={true} />
-                <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.readingBetweenLines}</span>
-              </div>
+              <LogoOrb size={20} thinking={true} />
+              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.readingBetweenLines}</span>
             </div>
           )}
 
@@ -931,10 +890,8 @@ export default function Conversation() {
 
           {(stage === "refine-loading" || stage === "quickadvice-loading") && (
             <div className="flex justify-start items-center" style={{ gap: 8 }}>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-                <LogoOrb size={20} thinking={true} />
-                <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.thinking}</span>
-              </div>
+              <LogoOrb size={20} thinking={true} />
+              <span style={{ fontSize: 13, color: "var(--text-dim)", fontStyle: "italic" }}>{s.thinking}</span>
             </div>
           )}
 
@@ -972,8 +929,7 @@ export default function Conversation() {
                 onClick={startChatListening}
                 style={{
                   background: chatListening ? "var(--gold)" : "transparent",
-                  border: "none", cursor: "pointer",
-                  color: chatListening ? "#080808" : "var(--text-dim)",
+                  border: "none", cursor: "pointer", color: chatListening ? "#080808" : "var(--text-dim)",
                   display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
                 }}
                 aria-label="Voice"
