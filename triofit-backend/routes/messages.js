@@ -31,6 +31,32 @@ router.get("/messages/:sessionId", async (req, res) => {
   res.json(data);
 });
 
+async function getPreviousAnalysisContext(session_id) {
+  const { data: analysisRow } = await supabase
+    .from("messages")
+    .select("message")
+    .eq("session_id", session_id)
+    .eq("message_type", "analysis")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!analysisRow?.message) return "";
+
+  try {
+    const parsed = JSON.parse(analysisRow.message);
+    return `
+Previous perception analysis:
+Impression: ${parsed.impression}
+Reasons: ${(parsed.reasons || []).join("; ")}
+Strengths: ${parsed.traits?.strong?.join(", ") || ""}
+Caution: ${parsed.traits?.caution?.join(", ") || ""}
+Prediction: ${parsed.prediction}`;
+  } catch {
+    return "";
+  }
+}
+
 async function getLastOutfitContext(session_id) {
   const { data: lastImageMsg } = await supabase
     .from("messages")
@@ -75,7 +101,7 @@ router.post("/chat", async (req, res) => {
 
     const { data: session } = await supabase
       .from("sessions")
-      .select("is_pro, chat_message_count, chat_message_date, goal")
+      .select("is_pro, chat_message_count, chat_message_date, goal, situation, gender, age, style, occasion")
       .eq("session_id", session_id)
       .single();
 
@@ -89,8 +115,31 @@ router.post("/chat", async (req, res) => {
     }
 
     const effectiveGoal = goal || session?.goal || "authority";
+    const effectiveProfile = profile || {
+      gender: session?.gender, age: session?.age, style: session?.style, occasion: session?.occasion,
+    };
+
+    const previousAnalysis = await getPreviousAnalysisContext(session_id);
     const outfitContext = await getLastOutfitContext(session_id);
-    const systemPrompt = getPersonaPrompt(effectiveGoal) + (outfitContext ? "\n\n" + outfitContext : "");
+
+    const continuityContext = `
+You are continuing an existing coaching conversation. Never restart, never re-introduce yourself, never repeat the perception analysis unless asked.
+
+USER GOAL: ${effectiveGoal}
+USER SITUATION: ${session?.situation || "Unknown"}
+USER PROFILE: ${JSON.stringify(effectiveProfile)}
+${previousAnalysis}
+${outfitContext}
+
+Conversation rules:
+- Continue naturally from the previous analysis and outfit recommendation above.
+- Assume the user has already read the perception report.
+- If they ask "why?", explain your reasoning using the specifics above.
+- Clothing is only one variable — if behaviour, confidence, communication, or preparation matter more, say so.
+- Never ask for information you already know from the context above.
+- Speak with confidence but never absolute certainty.`;
+
+    const systemPrompt = getPersonaPrompt(effectiveGoal) + "\n\n" + continuityContext;
 
     const reply = await chatCompletion(messages, systemPrompt, 2, lang || "en");
 
