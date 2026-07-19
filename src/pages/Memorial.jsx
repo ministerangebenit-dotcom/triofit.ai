@@ -7,14 +7,11 @@ import { useLang, t } from "../lib/i18n";
 const HONOREES = [
   {
     name: "Mbainwuh Callistus Nchia",
-    photo: "/public/Callistus.jpg",
+    photo: "/Callistus.jpg",
     years: "2003 – 2026",
     role: "Special Adviser",
     bio: "Callistus was more than a friend and teammate—he was someone who believed in people, in purpose, and in a future greater than himself. He carried dreams not only for his own life, but for those around him, and he inspired others to keep moving forward even when the road was difficult.",
-    impact: "His kindness, loyalty, and unwavering belief in what we were building left a mark that cannot be replaced. Though his time with us was far too short, his impact continues to live on in the lives he touched and in the vision he helped shape."
-            "His absence is deeply felt, but his legacy remains. We will honor him not only through our words, but through our actions—by continuing the work we dreamed about together and by carrying forward the values he lived by."
-            "You will always be remembered."
-            "Rest peacefully, Callistus.",
+    impact: "His kindness, loyalty, and unwavering belief in what we were building left a mark that cannot be replaced. Though his time with us was far too short, his impact continues to live on in the lives he touched and in the vision he helped shape.\n\nHis absence is deeply felt, but his legacy remains. We will honor him not only through our words, but through our actions—by continuing the work we dreamed about together and by carrying forward the values he lived by.\n\nYou will always be remembered.\n\nRest peacefully, Callistus.",
   },
 ];
 
@@ -90,7 +87,7 @@ export default function Memorial() {
               <div style={{ fontSize: 11, letterSpacing: "0.1em", color: "var(--gold)", textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
                 {s.memorialImpactLabel}
               </div>
-              <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.8 }}>{person.impact}</p>
+              <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.8, whiteSpace: "pre-line" }}>{person.impact}</p>
             </div>
           </motion.div>
         ))}
