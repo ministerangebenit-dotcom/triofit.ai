@@ -102,8 +102,8 @@ export const translations = {
     menuMemorial: "In Memoriam",
     memorialTag: "In Memoriam",
     memorialTitle: "We remember those who built with us.",
-    memorialAboutLabel: "Who they were",
-    memorialImpactLabel: "Their impact",
+    memorialAboutLabel: "Who he was",
+    memorialImpactLabel: "His impact",
     memorialFooter: "This page will remain here for as long as TRIOFIT exists.",
   },
 
@@ -210,8 +210,8 @@ export const translations = {
     menuMemorial: "In Memoriam",
     memorialTag: "In Memoriam",
     memorialTitle: "Nous nous souvenons de ceux qui ont bâti avec nous.",
-    memorialAboutLabel: "Qui ils étaient",
-    memorialImpactLabel: "Leur impact",
+    memorialAboutLabel: "Qui il était",
+    memorialImpactLabel: "Son impact",
     memorialFooter: "Cette page restera ici aussi longtemps que TRIOFIT existera.",
   },
 };
