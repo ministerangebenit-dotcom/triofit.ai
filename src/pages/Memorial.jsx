@@ -6,12 +6,16 @@ import { useLang, t } from "../lib/i18n";
 
 const HONOREES = [
   {
-    name: "[Name here]",
-    photo: "/memorial/placeholder.jpg",
-    years: "[Year] – 2026",
-    role: "[Role at TRIOFIT]",
-    bio: "[A few sentences about who they were, written by the people who knew them.]",
-    impact: "[A specific thing they contributed — a moment, a piece of work, a way they showed up for the team.]",
+    name: "Mbainwuh Callistus Nchia",
+    photo: "/public/Callistus.jpg",
+    years: "2003 – 2026",
+    role: "Special Adviser",
+    bio: "Callistus was more than a friend and teammate—he was someone who believed in people, in purpose, and in a future greater than himself. He carried dreams not only for his own life, but for those around him, and he inspired others to keep moving forward even when the road was difficult.",
+    impact: "His kindness, loyalty, and unwavering belief in what we were building left a mark that cannot be replaced. Though his time with us was far too short, his impact continues to live on in the lives he touched and in the vision he helped shape."
+            "His absence is deeply felt, but his legacy remains. We will honor him not only through our words, but through our actions—by continuing the work we dreamed about together and by carrying forward the values he lived by."
+            "You will always be remembered."
+
+            "Rest peacefully, Callistus.",
   },
 ];
 
