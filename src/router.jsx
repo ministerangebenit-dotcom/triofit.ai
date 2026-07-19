@@ -7,6 +7,7 @@ import Conversation from "./pages/Conversation";
 import About from "./pages/About";
 import RegisterStore from "./pages/RegisterStore";
 import YourFits from "./pages/YourFits";
+import Memorial from "./pages/Memorial";
 
 export default function Router() {
   return (
@@ -19,6 +20,7 @@ export default function Router() {
         <Route path="/about" element={<About />} />
         <Route path="/register-store" element={<RegisterStore />} />
         <Route path="/yourfits" element={<YourFits />} />
+        <Route path="/memorial" element={<Memorial />} />
       </Route>
     </Routes>
   );
