@@ -14,7 +14,6 @@ const HONOREES = [
     impact: "His kindness, loyalty, and unwavering belief in what we were building left a mark that cannot be replaced. Though his time with us was far too short, his impact continues to live on in the lives he touched and in the vision he helped shape."
             "His absence is deeply felt, but his legacy remains. We will honor him not only through our words, but through our actions—by continuing the work we dreamed about together and by carrying forward the values he lived by."
             "You will always be remembered."
-
             "Rest peacefully, Callistus.",
   },
 ];
