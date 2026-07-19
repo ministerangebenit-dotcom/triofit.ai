@@ -99,6 +99,12 @@ export const translations = {
     storeSubmitted: "Thank you — we'll reach out to you directly to set up your store partnership.",
     yourFitsSubtitle: "Every outfit your stylist has sent you, in one place.",
     yourFitsEmpty: "No outfits yet — once your stylist sends you a recommendation, it'll show up here.",
+    menuMemorial: "In Memoriam",
+    memorialTag: "In Memoriam",
+    memorialTitle: "We remember those who built with us.",
+    memorialAboutLabel: "Who they were",
+    memorialImpactLabel: "Their impact",
+    memorialFooter: "This page will remain here for as long as TRIOFIT exists.",
   },
 
   fr: {
@@ -201,6 +207,12 @@ export const translations = {
     storeSubmitted: "Merci — nous vous contacterons directement pour établir votre partenariat.",
     yourFitsSubtitle: "Toutes les tenues envoyées par votre styliste, réunies ici.",
     yourFitsEmpty: "Pas encore de tenues — dès que votre styliste vous en enverra une, elle apparaîtra ici.",
+    menuMemorial: "À la mémoire de",
+    memorialTag: "À la mémoire de",
+    memorialTitle: "Nous nous souvenons de ceux qui ont bâti avec nous.",
+    memorialAboutLabel: "Qui ils étaient",
+    memorialImpactLabel: "Leur impact",
+    memorialFooter: "Cette page restera ici aussi longtemps que TRIOFIT existera.",
   },
 };
 
