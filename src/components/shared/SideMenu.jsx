@@ -47,6 +47,10 @@ export default function SideMenu({ open, onClose, s }) {
               <i className="ti ti-photo" style={{ fontSize: 18 }} />
               YourFits
             </button>
+            <button onClick={() => go("/memorial")} style={menuItemStyle}>
+              <i className="ti ti-flower" style={{ fontSize: 18 }} />
+              {s.menuMemorial}
+            </button>
           </motion.div>
         </>
       )}
